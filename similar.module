@@ -222,9 +222,9 @@ function _similar_content($node) {
       $taxonomy_tids = (int)$taxonomy_tids;
     }
 
-    $result = db_query_range("SELECT DISTINCT(r.nid), r.title, r.teaser, MATCH(r.body, r.title) AGAINST ('%s') AS score FROM {node_revisions} r, {node} n, {term_node} t WHERE r.nid = n.nid AND n.nid = t.nid AND t.tid IN ($taxonomy_tids) AND MATCH(r.body, r.title) AGAINST ('%s') AND n.status <> 0 AND r.nid <> %d AND n.type IN ($types) ORDER BY score DESC, r.vid DESC", $text, $text, $node->nid, 0, variable_get('similar_num_display', 5));
+    $result = db_query_range("SELECT r.nid, r.title, r.teaser, MATCH(r.body, r.title) AGAINST ('%s') AS score FROM {node_revisions} r INNER JOIN {node} n ON r.nid = n.nid AND r.vid = n.vid INNER JOIN {term_node} t ON n.nid = t.nid AND t.tid IN ($taxonomy_tids) WHERE MATCH(r.body, r.title) AGAINST ('%s') AND n.status <> 0 AND r.nid <> %d AND n.type IN ($types) ORDER BY score DESC, r.vid DESC", $text, $text, $node->nid, 0, variable_get('similar_num_display', 5));
   } else {
-    $result = db_query_range("SELECT DISTINCT(r.nid), r.title, r.teaser, MATCH(r.body, r.title) AGAINST ('%s') AS score FROM {node_revisions} r, {node} n WHERE r.nid = n.nid AND MATCH(r.body, r.title) AGAINST ('%s') AND n.status <> 0 AND r.nid <> %d AND n.type IN ($types) ORDER BY score DESC, r.vid DESC", $text, $text, $node->nid, 0, variable_get('similar_num_display', 5));
+    $result = db_query_range("SELECT r.nid, r.title, r.teaser, MATCH(r.body, r.title) AGAINST ('%s') AS score FROM {node_revisions} r INNER JOIN {node} n ON r.nid = n.nid AND r.vid = n.vid WHERE MATCH(r.body, r.title) AGAINST ('%s') AND n.status <> 0 AND r.nid <> %d AND n.type IN ($types) ORDER BY score DESC, r.vid DESC", $text, $text, $node->nid, 0, variable_get('similar_num_display', 5));
   }
   while ($node = db_fetch_object($result)) {
     if($teaser) {
