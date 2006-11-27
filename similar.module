@@ -228,9 +228,9 @@ function _similar_content($node) {
   }
   while ($node = db_fetch_object($result)) {
     if($teaser) {
-      $items[] = l('<div class="similar-title">'. check_plain($node->title) .'</div><div class="simlar-teaser">'. check_markup($node->teaser) .'</div>', 'node/'.$node->nid, NULL, NULL, NULL, NULL, true);
+      $items[] = l('<div class="similar-title">'. $node->title .'</div><div class="simlar-teaser">'. check_markup($node->teaser) .'</div>', 'node/'.$node->nid, NULL, NULL, NULL, NULL, true);
     } else {
-      $items[] = l(check_plain($node->title), 'node/'.$node->nid);
+      $items[] = l($node->title, 'node/'.$node->nid);
     }
   }
 
