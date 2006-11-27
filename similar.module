@@ -64,7 +64,7 @@ function similar_block($op = 'list', $delta = 0, $edit = array()) {
           '#options' => $types
         );
 
-        if(module_exist('taxonomy')) {
+        if(module_exists('taxonomy')) {
           $names = _similar_taxonomy_names();
           $form['similar_taxonomy'] = array(
             '#type' => 'fieldset',
@@ -98,7 +98,7 @@ function similar_block($op = 'list', $delta = 0, $edit = array()) {
         variable_set('similar_teaser_enabled', $edit['similar_teaser_enabled']);
         variable_set('similar_num_display', $edit['similar_num_display']);
         variable_set('similar_node_types', $edit['similar_node_types']);
-        if(module_exist('taxonomy')) {
+        if(module_exists('taxonomy')) {
           variable_set('similar_taxonomy_filter', $edit['similar_taxonomy_filter']);
           variable_set('similar_taxonomy_tids', $edit['similar_taxonomy_tids']);
         }
@@ -211,7 +211,7 @@ function _similar_content($node) {
     list(,$types) = each($types);
   }
   $types = "'". $types ."'";
-  if(module_exist('taxonomy') && (variable_get('similar_taxonomy_filter', 0) == 2 && $taxonomy_tids = variable_get('similar_taxonomy_tids', array()))
+  if(module_exists('taxonomy') && (variable_get('similar_taxonomy_filter', 0) == 2 && $taxonomy_tids = variable_get('similar_taxonomy_tids', array()))
                                  || (variable_get('similar_taxonomy_filter', 0) == 1 && $taxonomy_tids = _similar_taxonomy_membership($node->nid))) {
     array_walk($taxonomy_tids, '_similar_force_int');
     if(sizeof($taxonomy_tids) > 1) {
