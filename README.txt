@@ -19,12 +19,12 @@ INSTALLATION
 Copy the similar directory to your modules directory.
 (example.org/modules/similar)
 
-Activate the module in administer > modules.
-Turn on the similar block in administer > blocks.
+Activate the module in administer > Site building > Modules.
+Turn on the similar block in administer > Site building > Blocks.
 
 Configure the number of similar entries and specific node types
 you want the block to search for at (default is 5):
-   admin/block/configure/similar/0
+   admin/build/block/configure/similar/0
 
 UPGRADING FROM OLDER THAN DRUPAL 4.7
 ------------------------------------
