@@ -6,10 +6,17 @@
  * Module does not support InnoDB or PostgreSQL, so no changes for it
  */
 function similar_install() {
-  switch ($GLOBALS['db_type']) {
-    case 'mysql':
-    case 'mysqli':
-      db_query('ALTER TABLE {node_revisions} ENGINE = MYISAM');
-      db_query('ALTER TABLE {node_revisions} ADD FULLTEXT(title, body)');
-  }
+  db_query('ALTER TABLE {node_revisions} ENGINE = MYISAM');
+  db_query('ALTER TABLE {node_revisions} ADD FULLTEXT `similar` (`title`, `body`)');
+}
+
+function similar_uninstall() {
+  db_drop_index($ret, 'node_revisions', 'similar');
+  return $ret;
+}
+
+function similar_update_1() {
+  $ret = array();
+  $ret[] = update_sql('ALTER TABLE {node_revisions} DROP INDEX `title`, ADD FULLTEXT `similar` (`title`, `body`)');
+  return $ret;
 }
