@@ -21,8 +21,8 @@ define('SIMILAR_CACHE_ENABLED', 1);
  *
  * @param string $section
  */
-function similar_help($section = 'admin/help#similar') {
-  switch ($section) {
+function similar_help($path, $arg) {
+  switch ($path) {
     case 'admin/help#similar':
       return t('<p>Lists the most similar nodes to the current node.</p>');
       break;
@@ -152,7 +152,7 @@ function similar_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
  * @param array $edit
  */
 function similar_block($op = 'list', $delta = 0, $edit = array()) {
-  switch($op) {
+  switch ($op) {
     case 'list':
       $blocks[0]['info'] = t('Similar entries');
       return $blocks;
@@ -173,7 +173,7 @@ function similar_block($op = 'list', $delta = 0, $edit = array()) {
           '#default_value' => variable_get('similar_rel_nofollow', 0),
           '#options' => array(t('No'), t('Yes'))
         );
-        for($i=1, $options=array(); $i < 101; $options[$i] = $i, $i+=1);
+        for ($i=1, $options=array(); $i < 101; $options[$i] = $i, $i+=1);
         $form['similar_num_display'] = array(
           '#type' => 'select',
           '#title' => t('Number of similar entries to find'),
@@ -235,7 +235,8 @@ function similar_block($op = 'list', $delta = 0, $edit = array()) {
     default:
       if (arg(0) == 'node' && is_numeric(arg(1)) && arg(2) != 'edit') {
         $node = node_load(array('nid' => arg(1)));
-      } else {
+      }
+      else {
         return;
       }
 
@@ -279,13 +280,13 @@ function similar_block($op = 'list', $delta = 0, $edit = array()) {
 /**
  * Query for published node types
  *
- * @see http://drupal.org/node/33444
+ * @link http://drupal.org/node/33444
  * @return array
  */
 function _similar_published_node_types() {
   $types  = array();
   $result = db_query('SELECT DISTINCT(n.type) FROM {node} n WHERE n.status <> 0 ORDER BY n.type ASC');
-  while($type = db_fetch_object($result)) {
+  while ($type = db_fetch_object($result)) {
     $types[$type->type] = $type->type;
   }
   return $types;
@@ -294,13 +295,13 @@ function _similar_published_node_types() {
 /**
  * Query for taxonomy names
  *
- * @see http://drupal.org/node/51041
+ * @link http://drupal.org/node/51041
  * @return array
  */
 function _similar_taxonomy_names() {
   $names  = array();
   $result = db_query('SELECT d.tid, v.vid, v.name AS vocab_name, d.name AS data_name FROM {term_data} d, {vocabulary} v WHERE v.vid = d.vid ORDER BY v.name, d.name ASC');
-  while($data = db_fetch_object($result)) {
+  while ($data = db_fetch_object($result)) {
     $names[$data->tid] = $data->vocab_name .': '. $data->data_name;
   }
   return $names;
@@ -309,13 +310,13 @@ function _similar_taxonomy_names() {
 /**
  * Query for taxonomies a node belongs to
  *
- * @see http://drupal.org/node/51041
+ * @link http://drupal.org/node/51041
  * @return array
  */
 function _similar_taxonomy_membership($nid) {
   $tids = array();
   $result = db_query('SELECT t.tid FROM {term_node} t WHERE t.nid = %d', $nid);
-  while($data = db_fetch_object($result)) {
+  while ($data = db_fetch_object($result)) {
     $tids[$data->tid] = $data->tid;
   }
   return $tids;
@@ -368,40 +369,43 @@ function theme_similar_content($node) {
     $types = implode("','", $types);
   }
   else {
-    list(,$types) = each($types);
+    list(, $types) = each($types);
   }
   $types = "'$types'";
   if (module_exists('taxonomy') && (variable_get('similar_taxonomy_filter', 0) == 2 && $taxonomy_tids = variable_get('similar_taxonomy_tids', array()))
-                                 || (variable_get('similar_taxonomy_filter', 0) == 1 && $taxonomy_tids = _similar_taxonomy_membership($node->nid))) {
+    || (variable_get('similar_taxonomy_filter', 0) == 1 && $taxonomy_tids = _similar_taxonomy_membership($node->nid))) {
+
     array_walk($taxonomy_tids, '_similar_force_int');
     if (sizeof($taxonomy_tids) > 1) {
       $taxonomy_tids = implode(',', $taxonomy_tids);
     }
     else {
-      list(,$taxonomy_tids) = each($taxonomy_tids);
+      list(, $taxonomy_tids) = each($taxonomy_tids);
       $taxonomy_tids = (int)$taxonomy_tids;
     }
 
-    $result = db_query_range("SELECT r.nid, MATCH(r.body, r.title) AGAINST ('%s') AS score FROM {node_revisions} r INNER JOIN {node} n ON r.nid = n.nid AND r.vid = n.vid INNER JOIN {term_node} t ON n.nid = t.nid AND t.tid IN ($taxonomy_tids) WHERE MATCH(r.body, r.title) AGAINST ('%s') AND n.status <> 0 AND r.nid <> %d AND n.type IN ($types) GROUP BY n.nid ORDER BY score DESC, r.vid DESC", $text, $text, $node->nid, 0, variable_get('similar_num_display', 5));
-  } else {
-    $result = db_query_range("SELECT r.nid, MATCH(r.body, r.title) AGAINST ('%s') AS score FROM {node_revisions} r INNER JOIN {node} n ON r.nid = n.nid AND r.vid = n.vid WHERE MATCH(r.body, r.title) AGAINST ('%s') AND n.status <> 0 AND r.nid <> %d AND n.type IN ($types) GROUP BY n.nid ORDER BY score DESC, r.vid DESC", $text, $text, $node->nid, 0, variable_get('similar_num_display', 5));
+    $result = db_query_range("SELECT r.nid, MATCH(r.body, r.title) AGAINST ('%s') AS score FROM {node_revisions} r INNER JOIN {node} n ON r.nid = n.nid AND r.vid = n.vid INNER JOIN {term_node} t ON n.nid = t.nid AND t.tid IN (%s) WHERE MATCH(r.body, r.title) AGAINST ('%s') AND n.status <> 0 AND r.nid <> %d AND n.type IN (%s) GROUP BY n.nid ORDER BY score DESC, r.vid DESC", $text, $taxonomy_tids, $text, $node->nid, $types, 0, variable_get('similar_num_display', 5));
+  }
+  else {
+    $result = db_query_range("SELECT r.nid, MATCH(r.body, r.title) AGAINST ('%s') AS score FROM {node_revisions} r INNER JOIN {node} n ON r.nid = n.nid AND r.vid = n.vid WHERE MATCH(r.body, r.title) AGAINST ('%s') AND n.status <> 0 AND r.nid <> %d AND n.type IN (%s) GROUP BY n.nid ORDER BY score DESC, r.vid DESC", $text, $text, $node->nid, $types, 0, variable_get('similar_num_display', 5));
   }
   while ($node = db_fetch_object($result)) {
     $content = node_load($node->nid);
     if ($teaser) {
       $items[] = '<div class="similar-title">'.
         l($content->title,
-          'node/'.$node->nid,
+          'node/'. $node->nid,
           array(
             'attributes' => variable_get('similar_rel_nofollow', 0) ? array('rel' => 'nofollow') : NULL,
             'absolute' => true
           )
         ) .
         '</div><div class="similar-teaser">'. check_markup($content->teaser, $content->format, false) .'</div>';
-    } else {
+    }
+    else {
       $items[] = l(
         $content->title,
-        'node/'.$node->nid,
+        'node/'. $node->nid,
         array('attributes' => variable_get('similar_rel_nofollow', 0) ? array('rel' => 'nofollow') : NULL)
       );
     }
