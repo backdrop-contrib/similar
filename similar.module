@@ -12,10 +12,6 @@
  * @author Arnab Nandi http://arnab.org/
  */
 
-define('SIMILAR_CACHE_LIFETIME', 0);
-define('SIMILAR_CACHE_DISABLED', 0);
-define('SIMILAR_CACHE_ENABLED', 1);
-
 /**
  * Implementation of hook_help().
  *
@@ -25,118 +21,6 @@ function similar_help($path, $arg) {
   switch ($path) {
     case 'admin/help#similar':
       return t('<p>Lists the most similar nodes to the current node.</p>');
-      break;
-  }
-}
-
-function similar_menu() {
-  $items = array();
-
-  $items['admin/settings/similar'] = array(
-    'title' => 'Similar Entries',
-    'description' => 'A module that displays a block with the most similar nodes to the currently viewed one, based on the title and body fields.',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('similar_admin_settings'),
-    'access callback' => 'user_access',
-    'access arguments' => array('administer site configuration')
-  );
-
-  return $items;
-}
-
-function similar_admin_settings() {
-  $form = array();
-
-  $form['similar_cache'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Cache settings'),
-    '#collapsible' => true,
-    '#collapsed' => false);
-
-  $form['similar_cache']['similar_cache']  = array(
-    '#type' => 'radios',
-    '#title' => t('Cache'),
-    '#default_value' => variable_get('similar_cache', SIMILAR_CACHE_DISABLED),
-    '#options' => array(SIMILAR_CACHE_DISABLED => t('Disabled'), SIMILAR_CACHE_ENABLED => t('Enabled'))
-  );
-
-  $period = drupal_map_assoc(array(0, 60, 180, 300, 600, 900, 1800, 2700, 3600, 10800, 21600, 32400, 43200, 86400), 'format_interval');
-  $period[0] = t('none');
-  $form['similar_cache']['similar_cache_lifetime'] = array(
-    '#type' => 'select',
-    '#title' => t('Minimum cache lifetime'),
-    '#default_value' => variable_get('similar_cache_lifetime', SIMILAR_CACHE_LIFETIME),
-    '#options' => $period,
-    '#description' => t('The cached block items will be forced to remain in cache at least this long before they are refreshed. Otherwise, cron jobs and node updates will clear the similar entries block cache at each occurrence. The retention policy below can be used to override this setting.')
-  );
-
-  $form['similar_cache']['retention']  = array(
-    '#type' => 'fieldset',
-    '#title' => 'Retention policy',
-    '#collapsible' => true,
-    '#collapsed' => true,
-    '#description' => t('Adjust whether or not to clear the similar entries cache when node content is updated. Remember, not setting delete to force clear cache may result in broken links for cached similar entries. This policy overrides the cache lifetime. Disabling every setting in this group will give full expiration control to the cache lifetime setting.')
-  );
-  $form['similar_cache']['retention']['similar_clear_on_insert']  = array(
-    '#type' => 'radios',
-    '#title' => t('Force clear on insert'),
-    '#default_value' => variable_get('similar_clear_on_insert', 0),
-    '#options' => array(0 => t('Disabled'), 1 => t('Enabled'))
-  );
-
-  $form['similar_cache']['retention']['update']  = array(
-    '#type' => 'fieldset',
-    '#collapsible' => false
-  );
-  $form['similar_cache']['retention']['update']['similar_clear_on_update']  = array(
-    '#type' => 'radios',
-    '#title' => t('Force clear on update'),
-    '#default_value' => variable_get('similar_clear_on_update', 0),
-    '#options' => array(0 => t('Disabled'), 1 => t('Enabled'))
-  );
-  $form['similar_cache']['retention']['update']['similar_clear_node_only']  = array(
-    '#type' => 'radios',
-    '#title' => t('Clear node only'),
-    '#default_value' => variable_get('similar_clear_node_only', 1),
-    '#options' => array(0 => t('Disabled'), 1 => t('Enabled')),
-    '#description' => t('Disabled will clear all the cached similar blocks on the system. Enabled will only clear the similar entries block cache shown on the updated node.')
-  );
-  $form['similar_cache']['retention']['similar_clear_on_delete']  = array(
-    '#type' => 'radios',
-    '#title' => t('Force clear on deletion'),
-    '#default_value' => variable_get('similar_clear_on_delete', 1),
-    '#options' => array(0 => t('Disabled'), 1 => t('Enabled'))
-  );
-  return system_settings_form($form);
-}
-
-/**
- * Perform forced cache clearing
- */
-function similar_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
-  switch ($op) {
-    case 'insert':
-      if (variable_get('similar_clear_on_insert', 0)) {
-        cache_clear_all('similar_block_0:', 'cache', true);
-      }
-      break;
-    case 'update':
-      if (variable_get('similar_clear_on_update', 0)) {
-        if (variable_get('similar_clear_node_only', 1)) {
-          cache_clear_all("similar_block_0:$node->nid", 'cache');
-        }
-        else {
-          cache_clear_all('similar_block_0:', 'cache', true);
-        }
-      }
-      break;
-    case 'delete':
-      if (variable_get('similar_clear_on_delete', 1)) {
-        cache_clear_all('similar_block_0:', 'cache', true);
-      }
-      else {
-        cache_clear_all("similar_block_0:$node->nid", 'cache');
-      }
       break;
   }
 }
@@ -155,6 +39,7 @@ function similar_block($op = 'list', $delta = 0, $edit = array()) {
   switch ($op) {
     case 'list':
       $blocks[0]['info'] = t('Similar entries');
+      $blocks[0]['cache'] = BLOCK_CACHE_PER_PAGE | BLOCK_CACHE_PER_ROLE;
       return $blocks;
 
     case 'configure':
@@ -250,26 +135,7 @@ function similar_block($op = 'list', $delta = 0, $edit = array()) {
             // The subject is displayed at the top of the block. Note that it should
             // be passed through t() for translation.
             $block['subject'] = t('Similar entries');
-
-            $cache_blocks = variable_get('similar_cache', SIMILAR_CACHE_DISABLED);
-
-            if ($cache_blocks) {
-              $cached_content = cache_get("similar_block_0:$node->nid", 'cache');
-
-              if ($cached_content === 0) { // cache_get() only returns 0 when data is not returned for the key
-                $block['content'] = theme('similar_content', $node);
-
-                $lifetime = variable_get('similar_cache_lifetime', SIMILAR_CACHE_LIFETIME);
-
-                cache_set("similar_block_0:$node->nid", $block['content'], 'cache', $lifetime ? time() + $lifetime : CACHE_TEMPORARY);
-              }
-              else {
-                $block['content'] = $cached_content->data;
-              }
-            }
-            else {
-              $block['content'] = theme('similar_content', $node);
-            }
+            $block['content'] = theme('similar_content', $node);
         }
       }
       return empty($block['content']) ? '' : $block;

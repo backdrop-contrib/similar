@@ -28,8 +28,6 @@ Configure the number of similar entries and specific node types
 you want the block to search for at (default is 5):
    admin/build/block/configure/similar/0
 
-Adjust your cache settings at admin/settings/similar.
-
 BUG REPORTING
 -------------
 

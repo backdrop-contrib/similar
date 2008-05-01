@@ -20,3 +20,13 @@ function similar_update_1() {
   $ret[] = update_sql('ALTER TABLE {node_revisions} DROP INDEX `title`, ADD FULLTEXT `similar` (`title`, `body`)');
   return $ret;
 }
+
+function similar_update_6200() {
+  variable_del('similar_cache');
+  variable_del('similar_cache_lifetime');
+  variable_del('similar_clear_on_insert');
+  variable_del('similar_clear_on_update');
+  variable_del('similar_clear_node_only');
+  variable_del('similar_clear_on_delete');
+  return array();
+}
