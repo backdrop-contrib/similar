@@ -6,8 +6,8 @@
  * Module does not support InnoDB or PostgreSQL, so no changes for it
  */
 function similar_install() {
-  db_query('ALTER TABLE {node_revisions} ENGINE = MYISAM');
-  db_query('ALTER TABLE {node_revisions} ADD FULLTEXT `similar` (`title`, `body`)');
+  db_query('ALTER TABLE {node_revision} ENGINE = MYISAM');
+  db_query('ALTER TABLE {node_revision} ADD FULLTEXT `similar` (`title`, `body`)');
 }
 
 function similar_uninstall() {
@@ -19,17 +19,8 @@ function similar_uninstall() {
   variable_del('similar_teaser_enabled');
 
   $ret = array();
-  $ret[] = update_sql("DELETE FROM {blocks} WHERE module = 'similar'");
-  db_drop_index($ret, 'node_revisions', 'similar');
-  return $ret;
-}
-
-/**
- * Add a FULLTEXT index to the title and body fields in the node_revisions table.
- */
-function similar_update_1() {
-  $ret = array();
-  $ret[] = update_sql('ALTER TABLE {node_revisions} DROP INDEX `title`, ADD FULLTEXT `similar` (`title`, `body`)');
+  $ret[] = update_sql("DELETE FROM {block} WHERE module = 'similar'");
+  db_drop_index($ret, 'node_revision', 'similar');
   return $ret;
 }
 
@@ -46,6 +37,6 @@ function similar_update_6000() {
 
   $ret = array();
   // 5 == BLOCK_CACHE_PER_PAGE | BLOCK_CACHE_PER_ROLE
-  $ret[] = update_sql("UPDATE {blocks} SET cache = 5 WHERE module = 'similar'");
+  $ret[] = update_sql("UPDATE {block} SET cache = 5 WHERE module = 'similar'");
   return $ret;
 }

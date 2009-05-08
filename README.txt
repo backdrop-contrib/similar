@@ -21,7 +21,7 @@ INSTALLATION
 Copy the similar directory to your modules directory.
 (sites/all/modules/similar)
 
-Activate the module in administer > Site building > Modules.
+Activate the module in Administer > Site building > Modules.
 Turn on the similar block in administer > Site building > Blocks.
 
 Configure the number of similar entries and specific node types
