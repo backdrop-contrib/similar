@@ -68,7 +68,7 @@ function similar_block($op = 'list', $delta = 0, $edit = array()) {
         $types = _similar_published_node_types();
         $form['similar_node_types'] = array(
           '#type' => 'checkboxes',
-          '#multiple' => true,
+          '#multiple' => TRUE,
           '#title' => t('Node types to display'),
           '#default_value' => variable_get('similar_node_types', $types),
           '#options' => $types
@@ -79,7 +79,8 @@ function similar_block($op = 'list', $delta = 0, $edit = array()) {
           $form['similar_taxonomy'] = array(
             '#type' => 'fieldset',
             '#title' => t('Taxonomy category filter'),
-            '#collapsible' => true, '#collapsed' => true
+            '#collapsible' => TRUE,
+            '#collapsed' => TRUE
           );
           $form['similar_taxonomy']['similar_taxonomy_filter'] = array(
             '#type' => 'radios',
@@ -91,13 +92,15 @@ function similar_block($op = 'list', $delta = 0, $edit = array()) {
           $form['similar_taxonomy']['similar_taxonomy_select'] = array(
             '#type' => 'fieldset',
             '#title' => t('Taxonomy categories to display'),
-            '#collapsible' => true, '#collapsed' => true
+            '#collapsible' => TRUE,
+            '#collapsed' => TRUE
           );
           $form['similar_taxonomy']['similar_taxonomy_select']['similar_taxonomy_tids'] = array(
             '#type' => 'select',
             '#default_value' => variable_get('similar_taxonomy_tids', array_keys($names)),
             '#description' => t('Hold the CTRL key to (de)select multiple options.'),
-            '#options' => $names, '#multiple' => true
+            '#options' => $names,
+            '#multiple' => TRUE
           );
         }
       }
@@ -203,7 +206,7 @@ function _similar_force_int(&$item) {
 }
 
 /**
- * Implementation of hook_theme()
+ * Implementation of hook_theme().
  *
  * @return array
  */
@@ -263,10 +266,10 @@ function theme_similar_content($node) {
           'node/'. $node->nid,
           array(
             'attributes' => variable_get('similar_rel_nofollow', 0) ? array('rel' => 'nofollow') : NULL,
-            'absolute' => true
+            'absolute' => TRUE
           )
         ) .
-        '</div><div class="similar-teaser">'. check_markup($content->teaser, $content->format, false) .'</div>';
+        '</div><div class="similar-teaser">'. check_markup($content->teaser, $content->format, FALSE) .'</div>';
     }
     else {
       $items[] = l(
