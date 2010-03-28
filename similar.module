@@ -244,11 +244,11 @@ function theme_similar_content($node) {
     $query->innerJoin('taxonomy_term_node', 't', 'n.nid = t.nid AND t.tid IN (:tids)', array(':tids' => $taxonomy_tids));
   }
 
-  $query->where("MATCH(r.body, r.title) AGAINST (:wheretext)", array(':wheretext' => $text));
   $query->condition('n.status', 0, '<>');
   $query->condition('r.nid', $node->nid, '<>');
   $query->condition('n.type', $types, 'IN');
   $query->groupBy('nid');
+  $query->havingCondition('score', 0, '>');
   $query->orderBy('score', 'DESC');
   $query->orderBy('r.vid', 'DESC');
   $query->range(0, variable_get('similar_num_display', 5));
