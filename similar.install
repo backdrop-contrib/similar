@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 /**
  * Add FULLTEXT index to MySQL MyISAM tables.
