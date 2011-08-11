@@ -7,273 +7,118 @@
  *
  * @author David Kent Norman http://deekayen.net/
  * @author Arnab Nandi http://arnab.org/
+ * @author Jordan Halterman jordan.halterman@gmail.com
  */
 
 /**
- * Implementation of hook_help().
- *
- * @param string $section
+ * Implements hook_help().
  */
 function similar_help($path, $arg) {
   switch ($path) {
     case 'admin/help#similar':
-      return t('<p>Lists the most similar nodes to the current node.</p>');
-      break;
+      return '<p>' . t('Lists the most similar nodes to the current node.') . '</p>';
   }
 }
 
 /**
- * Implementation of hook_block_list().
+ * Implements hook_views_api().
  */
-function similar_block_list() {
-  $blocks[0]['info'] = t('Similar entries');
-  $blocks[0]['cache'] = BLOCK_CACHE_PER_PAGE | BLOCK_CACHE_PER_ROLE;
-  return $blocks;
-}
-
-/**
- * Implementation of hook_block_configure().
- */
-function similar_block_configure($delta = 0) {
-  $form = array();
-  if ($delta == 0) {
-    $form['similar_teaser_enabled'] = array(
-      '#type' => 'radios',
-      '#title' => t('Include teaser text'),
-      '#default_value' => variable_get('similar_teaser_enabled', 0),
-      '#options' => array(t('No'), t('Yes'))
-    );
-    $form['similar_rel_nofollow'] = array(
-      '#type' => 'radios',
-      '#title' => t('Block search engines'),
-      '#description' => t('Adds rel="nofollow" to the HTML source of similar links so search engines won\'t count similar links in their ranking calculations.'),
-      '#default_value' => variable_get('similar_rel_nofollow', 0),
-      '#options' => array(t('No'), t('Yes'))
-    );
-    for ($i=1, $options=array(); $i < 101; $options[$i] = $i, $i+=1);
-    $form['similar_num_display'] = array(
-      '#type' => 'select',
-      '#title' => t('Number of similar entries to find'),
-      '#default_value' => variable_get('similar_num_display', 5),
-      '#options' => $options
-    );
-    $types = _similar_published_node_types();
-    $form['similar_node_types'] = array(
-      '#type' => 'checkboxes',
-      '#multiple' => TRUE,
-      '#title' => t('Node types to display'),
-      '#default_value' => variable_get('similar_node_types', $types),
-      '#options' => $types
-    );
-
-    if (module_exists('taxonomy')) {
-      $names = _similar_taxonomy_names();
-      $form['similar_taxonomy'] = array(
-        '#type' => 'fieldset',
-        '#title' => t('Taxonomy category filter'),
-        '#collapsible' => TRUE,
-        '#collapsed' => TRUE
-      );
-      $form['similar_taxonomy']['similar_taxonomy_filter'] = array(
-        '#type' => 'radios',
-        '#title' => t('Filter by taxonomy categories'),
-        '#default_value' => variable_get('similar_taxonomy_filter', 0),
-        '#options' => array(t('No category filtering'), t('Only show the similar nodes in the same category as the original node'), t('Use global category filtering')),
-        '#description' => t('By selecting global filtering, only nodes assigned to the following selected categories will display as similar nodes, regardless of the categories the original node is or is not assigned to.')
-      );
-      $form['similar_taxonomy']['similar_taxonomy_select'] = array(
-        '#type' => 'fieldset',
-        '#title' => t('Taxonomy categories to display'),
-        '#collapsible' => TRUE,
-        '#collapsed' => TRUE
-      );
-      $form['similar_taxonomy']['similar_taxonomy_select']['similar_taxonomy_tids'] = array(
-        '#type' => 'select',
-        '#default_value' => variable_get('similar_taxonomy_tids', array_keys($names)),
-        '#description' => t('Hold the CTRL key to (de)select multiple options.'),
-        '#options' => $names,
-        '#multiple' => TRUE
-      );
-    }
-  }
-  return $form;
-}
-
-/**
- * Implementation of hook_block_save().
- */
-function similar_block_save($delta = 0, $edit = array()) {
-  if ($delta == 0) {
-    variable_set('similar_teaser_enabled', $edit['similar_teaser_enabled']);
-    variable_set('similar_rel_nofollow', $edit['similar_rel_nofollow']);
-    variable_set('similar_num_display', $edit['similar_num_display']);
-    variable_set('similar_node_types', $edit['similar_node_types']);
-    if (module_exists('taxonomy')) {
-      variable_set('similar_taxonomy_filter', $edit['similar_taxonomy_filter']);
-      variable_set('similar_taxonomy_tids', $edit['similar_taxonomy_tids']);
-    }
-  }
-}
-
-/**
- * Implementation of hook_block_view().
- */
-function similar_block_view($delta = 0) {
-  if (arg(0) == 'node' && is_numeric(arg(1)) && arg(2) != 'edit') {
-    $node = node_load(arg(1));
-  }
-  else {
-    return;
-  }
-
-  $similar_node_types = variable_get('similar_node_types', _similar_published_node_types());
-
-  if ($node->nid > 0 && !empty($similar_node_types[$node->type])) {
-    unset($similar_node_types);
-
-    switch ($delta) {
-      case 0:
-        // The subject is displayed at the top of the block. Note that it should
-        // be passed through t() for translation.
-        $block['subject'] = t('Similar entries');
-        $block['content'] = theme('similar_content', $node);
-    }
-  }
-  return empty($block['content']) ? '' : $block;
-}
-
-/**
- * Query for published node types
- *
- * @link http://drupal.org/node/33444
- * @return array
- */
-function _similar_published_node_types() {
-  $types  = array();
-  $result = db_query('SELECT DISTINCT(n.type) FROM {node} n WHERE n.status <> 0 ORDER BY n.type ASC');
-  while ($type = $result->fetchObject()) {
-    $types[$type->type] = $type->type;
-  }
-  return $types;
-}
-
-/**
- * Query for taxonomy names
- *
- * @link http://drupal.org/node/51041
- * @return array
- */
-function _similar_taxonomy_names() {
-  $names  = array();
-  $result = db_query('SELECT d.tid, v.vid, v.name AS vocab_name, d.name AS data_name FROM {taxonomy_term_data} d, {taxonomy_vocabulary} v WHERE v.vid = d.vid ORDER BY v.name, d.name ASC');
-  while ($data = $result->fetchObject()) {
-    $names[$data->tid] = $data->vocab_name . ': ' . $data->data_name;
-  }
-  return $names;
-}
-
-/**
- * Query for taxonomies a node belongs to
- *
- * @link http://drupal.org/node/51041
- * @return array
- */
-function _similar_taxonomy_membership($nid) {
-  $tids = array();
-  $result = db_query('SELECT t.tid FROM {taxonomy_term_node} t WHERE t.nid = :nid', array(':nid' => $nid));
-  while ($data = $result->fetchObject()) {
-    $tids[$data->tid] = $data->tid;
-  }
-  return $tids;
-}
-
-/**
- * Some characters just shouldn't be in node type names
- */
-function _similar_content_type_escape(&$item) {
-  $item = str_replace(array("\x00", "\n", "\r", "\\", "'", "\"", "\x1a"), '', $item);
-}
-
-/**
- * SQL injection prevention. Probably overkill.
- */
-function _similar_force_int(&$item) {
-  $item = (int)$item;
-}
-
-/**
- * Implementation of hook_theme().
- *
- * @return array
- */
-function similar_theme() {
+function similar_views_api() {
   return array(
-    'similar_content' => array(
-      'arguments' => array('node' => NULL)
-    )
+    'api' => 2.0,
+    'path' => drupal_get_path('module', 'similar') . '/views',
   );
 }
 
 /**
- * Queries the database for similar entries and puts them in a HTML list
+ * Implements hook_cron().
  *
- * @param object $node
- * @return string
+ * Checks if an index rebuild is needed as determined in Drupal
+ * variables. If the similar_index variable is not empty it will
+ * have an array of field names which were added on the last
+ * cron run. If field settings have changed since that last cron
+ * run then the old index will be deleted and a new one added that
+ * includes all the relevant fields in the table. This is because
+ * ideally we want a single index for multiple fields in a table.
  */
-function theme_similar_content($node) {
-  $items = array();
-
-  $text = "$node->title $node->body";
-  $teaser = variable_get('similar_teaser_enabled', 0);
-
-  $types = _similar_published_node_types();
-  $types = variable_get('similar_node_types', $types);
-  array_walk($types, '_similar_content_type_escape');
-
-  $query = db_select('node_revision', 'r');
-  $query->addField('r', 'nid', 'nid');
-  $query->addExpression('MATCH(r.body, r.title) AGAINST (:matchtext)', 'score', array(':matchtext' => $text));
-  $query->innerJoin('node', 'n', 'r.nid = n.nid AND r.vid = n.vid');
-
-  if (module_exists('taxonomy') && (variable_get('similar_taxonomy_filter', 0) == 2 && $taxonomy_tids = variable_get('similar_taxonomy_tids', array()))
-    || (variable_get('similar_taxonomy_filter', 0) == 1 && $taxonomy_tids = _similar_taxonomy_membership($node->nid))) {
-
-    array_walk($taxonomy_tids, '_similar_force_int');
-
-    $query->innerJoin('taxonomy_term_node', 't', 'n.nid = t.nid AND t.tid IN (:tids)', array(':tids' => $taxonomy_tids));
-  }
-
-  $query->condition('n.status', 0, '<>');
-  $query->condition('r.nid', $node->nid, '<>');
-  $query->condition('n.type', $types, 'IN');
-  $query->groupBy('nid');
-  $query->havingCondition('score', 0, '>');
-  $query->orderBy('score', 'DESC');
-  $query->orderBy('r.vid', 'DESC');
-  $query->range(0, variable_get('similar_num_display', 5));
-  $result = $query->execute();
-
-  while ($node = $result->fetchObject()) {
-    $content = node_load($node->nid);
-    if ($teaser) {
-      $items[] = '<div class="similar-title">' .
-        l($content->title,
-          'node/' . $node->nid,
-          array(
-            'attributes' => variable_get('similar_rel_nofollow', 0) ? array('rel' => 'nofollow') : NULL,
-            'absolute' => TRUE
-          )
-        ) .
-        '</div><div class="similar-teaser">' . check_markup($content->teaser, $content->format, FALSE) . '</div>';
+function similar_cron() {
+  if (module_exists('field')) {
+    $indices = similar_get_indices();
+    // Get all text columns defined for fields in the database.
+    $data = array();
+    foreach (field_info_fields() as $field => $info) {
+      if ($info['type'] == 'text') {
+        $table = key($info['storage']['details']['sql'][FIELD_LOAD_CURRENT]);
+        $data[$table][] = $info['storage']['details']['sql'][FIELD_LOAD_CURRENT][$table]['value'];
+      }
     }
-    else {
-      $items[] = l(
-        $content->title,
-        'node/' . $node->nid,
-        array('attributes' => variable_get('similar_rel_nofollow', 0) ? array('rel' => 'nofollow') : NULL)
-      );
+    // For each table check if the index needs to be reset.
+    foreach ($data as $table => $fields) {
+      if (!isset($indices[$table]) || $data[$table] !== $indices[$table]) {
+        _similar_add_index($table, $data[$table]);
+      }
     }
   }
+}
 
-  return sizeof($items) > 0 ? theme('item_list', $items) : '';
+/**
+ * Adds FULLTEXT indexes to field value database columns.
+ *
+ * We want to make sure that we index as many columns as are available
+ * with a single index to improve results. So we remove the old index
+ * from the table before then reindexing the new fields. Indexed fields
+ * are then stored in a Drupal variable which is an array of sub-arrays,
+ * with the array key the table name and the sub-array being the fields
+ * that are indexed. Before calling this function the $fields argument
+ * should be compared against the existing index as stored in the
+ * similar_indices variable.
+ *
+ * @param $table
+ *   A string representing the table to index.
+ * @param $fields
+ *   An array of column names to add to the index.
+ */
+function _similar_add_index($table, $fields) {
+  $index = similar_get_indices();
+  if (db_table_exists($table)) {
+    // Drop the existing index on the table if it exists.
+    if (isset($index[$table]) && !empty($index[$table]) && db_index_exists($table, 'similar')) {
+      db_drop_index($table, 'similar');
+      unset($index[$table]);
+    }
+  
+    if (!empty($fields)) {
+      $fields = implode(', ', $fields);
+      db_query("ALTER TABLE {$table} ENGINE = MYISAM");
+      db_query("ALTER TABLE {$table} ADD FULLTEXT `similar` ($fields)");
+      $index[$table] = $fields;
+    }
+  }
+  elseif (isset($index[$table])) {
+    unset($index[$table]);
+  }
+  variable_set('similar_indices', $index);
+}
+
+/**
+ * Returns data about what fields are currently indexed.
+ *
+ * Indexed tables are fields are stored in a Drupal variable. Something
+ * to do is look into ways to reset the variable upon reasonable events
+ * like a field module install/uninstall or a cache clearance.
+ *
+ * @param $table
+ *   An optional string identifying a specific table's indices to return.
+ * @return
+ *   An array of sub-arrays where the key is a table name and the value
+ *   is an array of fields which are currently indexed in the table.
+ */
+function similar_get_indices($table = NULL) {
+  $indices = variable_get('similar_indices', array());
+  if (!empty($table)) {
+    return isset($indices[$table]) ? $indices[$table] : FALSE;
+  }
+  else {
+    return $indices;
+  }
 }

@@ -1,9 +1,10 @@
 
-DESCRIPTION:
-------------
+DESCRIPTION
+-----------
 
-A module that displays a block with similar published nodes to the
-currently viewed one, based on the title and body fields.
+Similar entries provides a default Views block for displaying
+similar published nodes to the currently viewed one, based on
+the title and body fields.
 
 This module is for MySQL-based Drupal sites. It uses MySQL's
 FULLTEXT indexing for MyISAM tables, and should automatically add
@@ -20,20 +21,33 @@ INSTALLATION
 Copy the similar directory to your modules directory.
 (sites/all/modules/similar)
 
-Activate the module in Administer > Site building > Modules.
-Turn on the similar block in administer > Site building > Blocks.
+Activate the module in administer >> modules.
+Turn on the similar block in administer >> structure >> blocks.
 
-Configure the number of similar entries and specific node types
-you want the block to search for at (default is 5):
-   admin/build/block/configure/similar/0
+WORKING WITH VIEWS
+------------------
+To customize the Similar entries block, navigate to administer >>
+structure >> views and edit the view named similar_entries.
+The similar entries view uses a custom argument. This node ID
+argument must be present in the view to be able to perform
+FULLTEXT searches on node bodies and CCK fields. Searching and
+comparing against CCK fields is optional in the argument. Similar
+entries indexes CCK field tables when cron runs. If you set up
+a new CCK field on a content type you can force Similar entries
+to index it by navigating to administer >> status report and
+clicking on 'run cron manually'.
+
 
 BUG REPORTING
 -------------
 
 http://drupal.org/project/issues/similar
 
+
 CONTRIBUTORS
 ------------
 David Kent Norman http://deekayen.net/
 
 Arnab Nandi http://arnab.org/
+
+Jordan Halterman
