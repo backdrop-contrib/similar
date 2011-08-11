@@ -76,7 +76,9 @@ function similar_cron() {
  * @param $table
  *   A string representing the table to index.
  * @param $fields
- *   An array of column names to add to the index.
+ *   An array of column names to add to the index. Even though most,
+ *   if not all of our tables will only have one indexed column, we
+ *   still may need to add multiple fields some time.
  */
 function _similar_add_index($table, $fields) {
   $index = similar_get_indices();

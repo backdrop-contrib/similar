@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Installation functions for Similar entries module.
+ */
+
+/**
  * Implements hook_install().
  *
  * Add FULLTEXT index to MySQL MyISAM tables.
