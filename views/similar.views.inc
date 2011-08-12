@@ -19,15 +19,15 @@ function similar_views_data() {
   $data['similar_entries']['table']['group'] = t('Similar entries');
   $data['similar_entries']['table']['join'] = array('#global' => array());
 
-  // Adds the similarity argument handler.
-  $data['similar_entries']['similar_entries'] = array(
-    'title' => t('Similarity'),
+  $data['similar_entries']['similarity'] = array(
+    'title' => t('Similarity score'),
     'help' => t('The rating given to the related content given as an argument.'),
-    'field' => array(
-      'handler' => 'similar_handler_field_similar',
-      'click sortable' => TRUE,
+    'filter' => array(
+      'handler' => 'similar_handler_filter_similarity',
+      'help' => t('Filter by similarity score. Note: this is not accurate when the <i>include content fields</i> option is enabled in the <i>Similar entries: Nid</i> argument.'),
+      'label' => 'Score',
     ),
-    'sort' => array('handler' => 'similar_handler_sort_similar'),
+    'sort' => array('handler' => 'similar_handler_sort_similarity'),
   );
   $data['similar_entries']['nid'] = array(
     'title' => t('Nid'),
@@ -51,14 +51,14 @@ function similar_views_handlers() {
   return array(
     'info' => array('path' => drupal_get_path('module', 'similar') . '/views'),
     'handlers' => array(
-      'similar_handler_field_similar' => array(
-        'parent' => 'views_handler_field',
-      ),
       'similar_handler_sort_similar' => array(
         'parent' => 'views_handler_sort',
       ),
       'similar_handler_argument_nid' => array(
         'parent' => 'views_handler_argument_numeric',
+      ),
+      'similar_handler_filter_similarity' => array(
+        'parent' => 'views_handler_filter_numeric',
       ),
     ),
   );

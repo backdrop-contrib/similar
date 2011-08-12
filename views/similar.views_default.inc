@@ -57,11 +57,11 @@ function similar_views_default_views() {
 
   // Sets the Similar entries sort handler.
   $handler->override_option('sorts', array(
-    'similar_entries' => array(
+    'similarity' => array(
       'order' => 'DESC',
-      'id' => 'similar_entries',
+      'id' => 'similarity',
       'table' => 'similar_entries',
-      'field' => 'similar_entries',
+      'field' => 'similarity',
       'relationship' => 'none',
       'override' => array('button' => 'Override'),
     ),
@@ -142,6 +142,20 @@ function similar_views_default_views() {
       'table' => 'node',
       'field' => 'status',
       'override' => array('button' => 'Override'),
+      'relationship' => 'none',
+    ),
+    'similarity' => array(
+      'operator' => '>',
+      'value' => '1',
+      'group' => '0',
+      'exposed' => FALSE,
+      'expose' => array(
+        'operator' => TRUE,
+        'label' => '',
+      ),
+      'id' => 'similarity',
+      'table' => 'similar_entries',
+      'field' => 'similarity',
       'relationship' => 'none',
     ),
   ));

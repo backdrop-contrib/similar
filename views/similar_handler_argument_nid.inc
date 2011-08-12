@@ -16,7 +16,6 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
   public function option_definition() {
     $options = parent::option_definition();
     $options['include_fields'] = array('default' => 0);
-    $options['minimum_similarity'] = array('default' => '0');
     return $options;
   }
 
@@ -27,20 +26,6 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     parent::options_form($form, $form_state);
     unset($form['not']);
 
-    $form['minimum_similarity'] = array(
-      '#type' => 'select',
-      '#title' => t('Minimum similarity score'),
-      '#options' => array(
-        '0' => '0',
-        '1' => '1',
-        '2' => '2',
-        '3' => '3',
-        '4' => '4',
-        '5' => '5',
-      ),
-      '#default_value' => $this->options['minimum_similarity'],
-      '#description' => t('Choosing a higher number will further limit the amount of results and provide only results with a higher similarity rating.'),
-    );
     if (module_exists('field')) {
       $form['include_fields'] = array(
         '#type' => 'checkbox',
@@ -128,8 +113,6 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     else {
       $this->query->add_where(0, 'node.nid', $this->value[0], '<>');
     }
-
-    $this->query->add_having('nid', 'score', $this->options['minimum_similarity'], '>');
   }
 
 }

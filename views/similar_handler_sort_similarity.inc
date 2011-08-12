@@ -8,7 +8,7 @@
 /**
  * Defines the similar entries sort handler.
  */
-class similar_handler_sort_similar extends views_handler_sort {
+class similar_handler_sort_similarity extends views_handler_sort {
 
   /**
    * Defines default options.
