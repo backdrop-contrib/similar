@@ -12,7 +12,7 @@ function similar_views_default_views() {
   $view = new view;
   $view->name = 'similar_entries';
   $view->description = t('Provides links to similar content based on FULLTEXT searches by Similar entries module.');
-  $view->tag = t('default');
+  $view->tag = t('Similar entries');
   $view->view_php = '';
   $view->base_table = 'node';
   $view->is_cacheable = '1';
