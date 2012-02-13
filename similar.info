@@ -1,4 +1,4 @@
-name = Similar entries
+name = Similar Entries
 description = Displays a block with the most similar nodes to the currently viewed one, based on the title and body fields, for sites using MySQL MyISAM tables.
 core = 7.x
 dependencies[] = views
