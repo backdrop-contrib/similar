@@ -23,8 +23,8 @@ class similar_handler_sort_similarity extends views_handler_sort {
    * Defines query elements.
    */
   public function query() {
-    $this->query->add_field(NULL, 'COUNT(node.nid)', 'node_count', array('aggregate' => TRUE));
     $this->query->add_orderby(NULL, NULL, $this->options['order'], 'score');
+    $this->query->add_groupby('score');
   }
 
 }
