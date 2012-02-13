@@ -5,3 +5,4 @@ dependencies[] = views
 files[] = views/similar_handler_argument_nid.inc
 files[] = views/similar_handler_filter_similarity.inc
 files[] = views/similar_handler_sort_similarity.inc
+files[] = views/similar_handler_field_similarity.inc

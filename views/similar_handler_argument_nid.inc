@@ -64,8 +64,8 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     $text = '';
     foreach ($this->value as $nid) {
       $node = node_load($nid);
-      if (isset($node->title) && isset($node->body)) {
-        $text .= "$node->title {$node->body[$node->language][0]['value']} ";
+      if (isset($node->title) && isset($node->body) && isset($node->body[$node->language])) {
+        $text .= ">". implode(' >', explode(' ', $node->title)) ." {$node->body[$node->language][0]['value']} ";
       }
     }
     $text = trim(addslashes(strip_tags($text)));
@@ -75,7 +75,7 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     $selects = array();
     if (db_table_exists('field_data_body')) {
       $body_table = $this->query->add_table('field_data_body');
-      $selects[] = "MATCH ($body_table.body_value) AGAINST ('$text')";
+      $selects[] = "MATCH ($body_table.body_value) AGAINST ('$text' IN BOOLEAN MODE)";
     }
 
     // @TODO: Currently the fields query runs successfully, but because
@@ -90,11 +90,11 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
         if (!empty($indexed) && db_table_exists($table)) {
           $alias = $this->query->add_table($table);
           if (count($indexed) > 1) {
-            $selects[] = "MATCH ($alias." . implode(", $alias.", $indexed) . ") AGAINST ('$text')";
+            $selects[] = "MATCH ($alias." . implode(", $alias.", $indexed) . ") AGAINST ('$text' IN BOOLEAN MODE)";
           }
           elseif (count($indexed) == 1) {
             $field = array_pop($indexed);
-            $selects[] = "MATCH ($alias.$field) AGAINST ('$text')";
+            $selects[] = "MATCH ($alias.$field) AGAINST ('$text' IN BOOLEAN MODE)";
           }
         }
       }
@@ -106,7 +106,6 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
 
     // Exclude the current node(s).
     if (count($this->value) > 1) {
-      $placeholders = implode(', ', array_fill(0, count($this->value), '%d'));
       $this->query->add_where(0, 'node.nid', $this->value, 'NOT IN');
     }
     else {

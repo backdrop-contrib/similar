@@ -27,6 +27,10 @@ function similar_views_data() {
       'help' => t('Filter by similarity score. Note: this is not accurate when the <i>include content fields</i> option is enabled in the <i>Similar entries: Nid</i> argument.'),
       'label' => 'Score',
     ),
+    'field' => array(
+      'handler' => 'similar_handler_field_similarity',
+      'click sortable' => TRUE,
+    ),
     'sort' => array('handler' => 'similar_handler_sort_similarity'),
   );
   $data['similar_entries']['nid'] = array(
@@ -59,6 +63,9 @@ function similar_views_handlers() {
       ),
       'similar_handler_filter_similarity' => array(
         'parent' => 'views_handler_filter_numeric',
+      ),
+      'similar_handler_field_similarity' => array(
+        'parent' => 'views_handler_field',
       ),
     ),
   );
