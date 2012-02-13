@@ -16,7 +16,7 @@
  */
 function similar_views_data() {
   // We namespace the data keys to prevent conflicts with 'similar'.
-  $data['similar_entries']['table']['group'] = t('Similar entries');
+  $data['similar_entries']['table']['group'] = t('Similar Entries');
   $data['similar_entries']['table']['join'] = array('#global' => array());
 
   $data['similar_entries']['similarity'] = array(

@@ -10,9 +10,9 @@
  */
 function similar_views_default_views() {
   $view = new view;
-  $view->name = 'similar_entries';
+  $view->name = 'Similar Entries';
   $view->description = t('Provides links to similar content based on FULLTEXT searches by Similar entries module.');
-  $view->tag = t('Similar entries');
+  $view->tag = t('Similar Entries');
   $view->view_php = '';
   $view->base_table = 'node';
   $view->is_cacheable = '1';
@@ -144,26 +144,12 @@ function similar_views_default_views() {
       'override' => array('button' => 'Override'),
       'relationship' => 'none',
     ),
-    'similarity' => array(
-      'operator' => '>',
-      'value' => '1',
-      'group' => '0',
-      'exposed' => FALSE,
-      'expose' => array(
-        'operator' => TRUE,
-        'label' => '',
-      ),
-      'id' => 'similarity',
-      'table' => 'similar_entries',
-      'field' => 'similarity',
-      'relationship' => 'none',
-    ),
   ));
 
   // Set a few final items.
   $handler->override_option('access', array('type' => 'none'));
   $handler->override_option('cache', array('type' => 'none'));
-  $handler->override_option('title', 'Similar entries');
+  $handler->override_option('title', 'Similar Entries');
   $handler->override_option('items_per_page', 8);
 
   // Add the similar entries block.
