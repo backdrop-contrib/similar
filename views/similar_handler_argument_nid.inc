@@ -71,7 +71,6 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     $text = trim(addslashes(strip_tags($text)));
 
     $this->ensure_my_table();
-    $nids = $this->nids;
 
     $selects = array();
     if (db_table_exists('field_data_body')) {
