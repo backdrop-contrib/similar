@@ -90,9 +90,9 @@ function _similar_add_index($table, $fields) {
     }
   
     if (!empty($fields)) {
-      $fields = implode(', ', $fields);
+      $add_fields = implode(', ', $fields);
       db_query("ALTER TABLE {$table} ENGINE = MYISAM");
-      db_query("ALTER TABLE {$table} ADD FULLTEXT `similar` ($fields)");
+      db_query("ALTER TABLE {$table} ADD FULLTEXT `similar` ($add_fields)");
       $index[$table] = $fields;
     }
   }
