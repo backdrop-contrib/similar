@@ -15,6 +15,7 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
    */
   public function option_definition() {
     $options = parent::option_definition();
+    $options['increase_title'] = array('default' => 1);
     $options['include_fields'] = array('default' => 0);
     return $options;
   }
@@ -26,12 +27,18 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     parent::options_form($form, $form_state);
     unset($form['not']);
 
+    $form['increase_title'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Increase the weight of node titles'),
+      '#default_value' => !empty($this->options['increase_title']),
+      '#description' => t('Increase the relevance of words in the title of the node being viewed.'),
+    );
     if (module_exists('field')) {
       $form['include_fields'] = array(
         '#type' => 'checkbox',
         '#title' => t('Include content fields in matching'),
         '#default_value' => !empty($this->options['include_fields']) ? $this->options['include_fields'] : 0,
-        '#description' => t('Enable FULLTEXT queries on fields defined with Contend Contruction Kit (CCK).'),
+        '#description' => t('Enable FULLTEXT queries on fields defined with Field module.'),
       );
     }
   }
@@ -53,6 +60,19 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     $this->view->nids = $this->value;
     return TRUE;
   }
+  
+  /**
+   * Override the behavior of title(). Get the title of the node.
+   */
+  function title_query() {
+    $titles = array();
+  
+    $result = db_query("SELECT n.title FROM {node} n WHERE n.nid IN (:nids)", array(':nids' => $this->value));
+    foreach ($result as $term) {
+      $titles[] = check_plain($term->title);
+    }
+    return $titles;
+  }
 
   /**
    * Builds the query.
@@ -65,7 +85,17 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     foreach ($this->value as $nid) {
       $node = node_load($nid);
       if (isset($node->title) && isset($node->body) && isset($node->body[$node->language])) {
-        $text .= ">". implode(' >', explode(' ', $node->title)) ." {$node->body[$node->language][0]['value']} ";
+        // Remove punctuation from the title.
+        $title = preg_replace('/[^a-z0-9 _-]+/i', '', $node->title);
+
+        // Increase the relevancy of words in the node title if option is selected.
+        if (!empty($this->options['increase_title'])) {
+          $text .= ">". implode(" >", explode(' ', $title));
+        }
+        else {
+          $text .= $title;
+        }
+        $text .= " {$node->body[$node->language][0]['value']} ";
       }
     }
     $text = trim(addslashes(strip_tags($text)));

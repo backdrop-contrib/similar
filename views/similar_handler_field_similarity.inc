@@ -16,6 +16,7 @@ class similar_handler_field_similarity extends views_handler_field {
   function option_definition() {
     $options = parent::option_definition();
     $options['score_type'] = array('default' => 1);
+    $options['round_decimal'] = array('default' => 0);
     $options['percent_suffix'] = array('default' => 1);
     return $options;
   }
@@ -34,6 +35,18 @@ class similar_handler_field_similarity extends views_handler_field {
         1 => t('Show as percentage'),
       ),
     );
+    $form['round_decimal'] = array(
+      '#type' => 'select',
+      '#title' => t('Round to nearest'),
+      '#default_value' => $this->options['round_decimal'],
+      '#options' => array(
+        0 => t('Whole number') . ' (1)',
+        1 => '10th (1.0)',
+        2 => '100th (1.00)',
+        3 => '1,000th (1.000)',
+        4 => '10,000th (1.0000)',
+      ),
+    );
     $form['percent_suffix'] = array(
       '#type' => 'checkbox',
       '#title' => t('Append % when showing percentage'),
@@ -47,13 +60,12 @@ class similar_handler_field_similarity extends views_handler_field {
    * Renders the score as a number or a percentage that cannot exceed 50.
    */
   function render($values) {
+    $score = round($values->score / 10, $this->options['round_decimal']);
+    $output = $score > 50 ? 50 : $score;
     if ($this->options['score_type'] == 0) {
-      $score = $values->score / 10;
-      return $score > 50 ? 50 : $score;
+      return $output;
     }
     else {
-      $score = round($values->score / 10);
-      $output = $score > 50 ? 50 : $score;
       if (!empty($this->options['percent_suffix'])) {
         $output .= '%';
       }
