@@ -71,6 +71,6 @@ class similar_handler_field_similarity extends views_handler_field {
       }
       return $output;
     }
-    
   }
+
 }

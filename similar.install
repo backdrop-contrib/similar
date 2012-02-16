@@ -37,38 +37,3 @@ function similar_uninstall() {
     }
   }
 }
-
-/**
- * Use D6's core block caching system and remove old custom cache config.
- * @link http://drupal.org/node/253299 @endlink
- */
-function similar_update_6000() {
-  variable_del('similar_cache');
-  variable_del('similar_cache_lifetime');
-  variable_del('similar_clear_on_insert');
-  variable_del('similar_clear_on_update');
-  variable_del('similar_clear_node_only');
-  variable_del('similar_clear_on_delete');
-
-  $ret = array();
-  // 5 == BLOCK_CACHE_PER_PAGE | BLOCK_CACHE_PER_ROLE
-  $ret[] = update_sql("UPDATE {blocks} SET cache = 5 WHERE module = 'similar'");
-  return $ret;
-}
-
-/**
- * Remove the existing Similar entries block.
- */
-function similar_update_6200() {
-  variable_del('similar_node_types');
-  variable_del('similar_num_display');
-  variable_del('similar_rel_nofollow');
-  variable_del('similar_taxonomy_filter');
-  variable_del('similar_taxonomy_tids');
-  variable_del('similar_teaser_enabled');
-
-  $ret = array();
-  $ret[] = update_sql("DELETE FROM {blocks} WHERE module = 'similar'");
-  cache_clear_all('*', 'cache_block', TRUE);
-  return $ret;
-}
