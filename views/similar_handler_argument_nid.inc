@@ -53,7 +53,7 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
    * from URL is provided.
    */
   public function default_actions($which = NULL) {
-    $defaults = parent::default_actions($which);
+    $defaults = parent::default_actions();
     unset($defaults['ignore'], $defaults['not found'], $defaults['summary'], $defaults['empty']);
 
     if ($which) {
