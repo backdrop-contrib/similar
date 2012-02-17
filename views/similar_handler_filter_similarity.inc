@@ -54,8 +54,10 @@ class similar_handler_filter_similarity extends views_handler_filter_numeric {
    * Inserts a having clause into the query.
    */
   public function query() {
-    $this->ensure_my_table();
-    $this->query->add_having('nid', 'score', $this->value['value'] * 10, $this->operator);
+    if (in_array('similar_entries', $this->query->tags)) {
+      $this->ensure_my_table();
+      $this->query->add_having('nid', 'score', $this->value['value'] * 10, $this->operator);
+    }
   }
 
 }
