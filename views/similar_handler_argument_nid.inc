@@ -30,7 +30,6 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
   public function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
     unset($form['not']);
-    $form['default_action']['#disabled'] = TRUE;
     $form['default_argument_type']['#disabled'] = TRUE;
 
     $form['increase_title'] = array(
@@ -46,6 +45,24 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
         '#default_value' => !empty($this->options['include_fields']) ? $this->options['include_fields'] : 0,
         '#description' => t('Enable FULLTEXT queries on fields defined with Field module.'),
       );
+    }
+  }
+
+  /**
+   * Overrides argument's default actions list to ensure that node ID
+   * from URL is provided.
+   */
+  public function default_actions($which = NULL) {
+    $defaults = parent::default_actions($which);
+    unset($defaults['ignore'], $defaults['not found'], $defaults['summary'], $defaults['empty']);
+
+    if ($which) {
+      if (!empty($defaults[$which])) {
+        return $defaults[$which];
+      }
+    }
+    else {
+      return $defaults;
     }
   }
 
