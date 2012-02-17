@@ -142,6 +142,9 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
       $this->query->add_where(0, 'node.nid', $this->value[0], '<>');
     }
 
+    // Add a node_access tag to prevent conflict with node_access module.
+    $this->query->add_tag('node_access');
+
     // Add a Similar Entries tag to indicate that filters and sort handlers are valid.
     $this->query->add_tag('similar_entries');
   }
