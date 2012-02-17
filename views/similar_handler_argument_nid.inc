@@ -30,6 +30,8 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
   public function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
     unset($form['not']);
+    $form['default_action']['#disabled'] = TRUE;
+    $form['default_argument_type']['#disabled'] = TRUE;
 
     $form['increase_title'] = array(
       '#type' => 'checkbox',
