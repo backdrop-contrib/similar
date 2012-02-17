@@ -48,6 +48,10 @@ function similar_views_default_views() {
   $handler->display->display_options['arguments']['nid']['summary']['format'] = 'default_summary';
   $handler->display->display_options['arguments']['nid']['summary_options']['override'] = TRUE;
   $handler->display->display_options['arguments']['nid']['summary_options']['items_per_page'] = 8;
+  $handler->display->display_options['arguments']['nid']['validate_type'] = 'node';
+  $handler->display->display_options['arguments']['nid']['validate_argument_type'] = 'nid';
+  $handler->display->display_options['arguments']['nid']['validate_argument_nid_type'] = 'nid';
+  $handler->display->display_options['arguments']['nid']['validate_fail'] = 'not found';
 
   // Sets a node title field that links to the node.
   $handler->display->display_options['fields']['title']['id'] = 'title';
