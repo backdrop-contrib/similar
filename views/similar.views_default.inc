@@ -42,73 +42,12 @@ function similar_views_default_views() {
   $handler->display->display_options['arguments']['nid']['id'] = 'nid';
   $handler->display->display_options['arguments']['nid']['table'] = 'similar_entries';
   $handler->display->display_options['arguments']['nid']['field'] = 'nid';
-  $handler->display->display_options['arguments']['nid']['default_action'] = 'not found';
+  $handler->display->display_options['arguments']['nid']['default_action'] = 'default';
   $handler->display->display_options['arguments']['nid']['default_argument_type'] = 'node';
   $handler->display->display_options['arguments']['nid']['summary']['sort_order'] = 'desc';
   $handler->display->display_options['arguments']['nid']['summary']['format'] = 'default_summary';
   $handler->display->display_options['arguments']['nid']['summary_options']['override'] = TRUE;
   $handler->display->display_options['arguments']['nid']['summary_options']['items_per_page'] = 8;
-
-  // Enables additional validation of the node ID argument.
-  $handler->override_option('arguments', array(
-    'nid' => array(
-      'id' => 'nid',
-      'table' => 'similar_entries',
-      'field' => 'nid',
-      'title' => '',
-      'default_action' => 'default',
-      'style_plugin' => 'default_summary',
-      'style_options' => array(),
-      'wildcard' => '',
-      'wildcard_substitution' => '',
-      'breadcrumb' => '',
-      'break_phrase' => 0,
-      'not' => 0,
-      'override' => array('button' => 'Override'),
-      'relationship' => 'none',
-      'default_argument_type' => 'node',
-      'default_argument' => '',
-      'default_options_div_prefix' => '',
-      'default_argument_fixed' => '',
-      'default_argument_user' => 0,
-      'default_argument_php' => '',
-      'validate_type' => 'node',
-      'validate_fail' => 'not found',
-      'validate_user_argument_type' => 'nid',
-      'validate_user_roles' => array(
-        '2' => 0,
-        '3' => 0,
-        '4' => 0,
-      ),
-      'validate_argument_node_access' => 0,
-      'validate_argument_nid_type' => 'nid',
-      'validate_argument_node_type' => array(
-        'blog' => 0,
-        'product' => 0,
-        'presenter' => 0,
-        'playlist_video' => 0,
-        'standalone_video' => 0,
-        'page' => 0,
-        'article' => 0,
-      ),
-      'validate_argument_vocabulary' => array(
-        '1' => 0,
-        '2' => 0,
-        '3' => 0,
-        '4' => 0,
-      ),
-      'validate_argument_type' => 'nid',
-      'validate_argument_transform' => 0,
-      'validate_user_restrict_roles' => 0,
-      'validate_argument_node_flag_name' => '*relationship',
-      'validate_argument_node_flag_test' => 'flaggable',
-      'validate_argument_node_flag_id_type' => 'id',
-      'validate_argument_user_flag_name' => '*relationship',
-      'validate_argument_user_flag_test' => 'flaggable',
-      'validate_argument_user_flag_id_type' => 'id',
-      'validate_argument_php' => '',
-    ),
-  ));
 
   // Sets a node title field that links to the node.
   $handler->display->display_options['fields']['title']['id'] = 'title';
