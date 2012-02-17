@@ -15,6 +15,10 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
    */
   public function option_definition() {
     $options = parent::option_definition();
+    $options['default_action'] = array('default' => 'default');
+    $options['default_argument_type'] = array('default' => 'node');
+    $options['validate']['contains']['type'] = array('default' => 'node');
+    $options['validate']['contains']['fail'] = array('default' => 'not found');
     $options['increase_title'] = array('default' => 1);
     $options['include_fields'] = array('default' => 0);
     return $options;
