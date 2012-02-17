@@ -39,7 +39,7 @@ function similar_views_data() {
     'argument' => array(
       'handler' => 'similar_handler_argument_nid',
       'parent' => 'views_handler_argument_numeric',
-      'name field' => 'nid',
+      'name field' => 'title',
       'numeric' => TRUE,
       'validate type' => 'nid',
     ),
