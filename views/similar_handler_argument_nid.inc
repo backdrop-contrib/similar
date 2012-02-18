@@ -100,7 +100,7 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
   /**
    * Builds the query.
    */
-  public function query() {
+  public function query($group_by = FALSE) {
 
     // Since the view could have multiple nid arguments, load each node
     // and populate the $text variable with node titles and bodies.
