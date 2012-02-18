@@ -14,14 +14,25 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
    * Defines default values for argument settings.
    */
   public function option_definition() {
+    $common_words = array('-not', '-and', '-a', '-or', '-the', '-but', '-therefore', '-because', '-can\'t', '-can', '-for',
+      '-until', '-the', '-of', '-and', '-to', '-in', '-is', '-you', '-that', '-it', '-he', '-was', '-on', '-are', '-as', '-with',
+      '-his', '-they', '-I', '-at', '-be', '-this', '-have', '-from', '-one', '-had', '-by', '-word', '-but', '-not', '-what',
+      '-all', '-were', '-we', '-when', '-your', '-said', '-there', '-use', '-an', '-each', '-which', '-she', '-do', '-how',
+      '-their', '-if', '-will', '-up', '-other', '-about', '-out', '-many', '-then', '-them', '-these', '-so', '-some', '-her',
+      '-would', '-make', '-like', '-him', '-into', '-time', '-has', '-look', '-two', '-more', '-write', '-go', '-see', '-no',
+      '-way', '-could', '-people', '-my', '-than', '-first', '-water', '-been', '-call', '-who', '-oil', '-its', '-now', '-find');
+
     $options = parent::option_definition();
     $options['default_action'] = array('default' => 'default');
     $options['default_argument_type'] = array('default' => 'node');
     $options['validate']['contains']['type'] = array('default' => 'node');
-    $options['validate']['contains']['fail'] = array('default' => 'not found');
-    $options['boolean_mode'] = array('default' => 1);
+    $options['boolean_mode'] = array('default' => 0);
+    $options['enable_custom_operators'] = array('default' => 0);
+    $options['custom_operators'] = array('default' => implode(' | ', $common_words));
     $options['increase_title'] = array('default' => 1);
+    $options['title_operator'] = array('default' => 'increase');
     $options['include_fields'] = array('default' => 0);
+    $options['included_fields'] = array('default' => array());
     return $options;
   }
 
@@ -47,21 +58,57 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     );
     $form['increase_title'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Increase the weight of node titles'),
+      '#title' => t('Adjust relevance of node title'),
       '#default_value' => !empty($this->options['increase_title']),
       '#description' => t('Increase the relevance of words in the title of the node being viewed.'),
       '#fieldset' => 'similar',
       '#dependency' => array('edit-options-boolean-mode' => array('1')),
     );
+    $form['title_operator'] = array(
+      '#type' => 'select',
+      '#title' => t('Title relevance'),
+      '#options' => array(
+        'none' => t('No change'),
+        'increase' => t('Increase title relevance'),
+        'decrease' => t('Decrease title relevance'),
+        'require_all' => t('Require all terms'),
+        'require_some' => t('Require at least one term'),
+        'require_complete' => t('Require complete title'),
+        'exclude_all' => t('Exclude all terms'),
+        'exclude_some' => t('Exclude at least one term'),
+        'exclude_complete' => t('Exclude complete title'),
+      ),
+      '#default_value' => $this->options['title_operator'],
+      '#description' => t('Select an operator to apply to the title of the current node in matching.'),
+      '#fieldset' => 'similar',
+      '#dependency' => array(
+        'edit-options-boolean-mode' => array('1'),
+        'edit-options-increase-title' => array('1'),
+      ),
+      '#dependency_count' => 2,
+    );
+    $form['enable_custom_operators'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Set custom operators in words and phrases'),
+      '#default_value' => !empty($this->options['enable_custom_operators']),
+      '#fieldset' => 'similar',
+      '#dependency' => array('edit-options-boolean-mode' => array('1')),
+    );
+    $form['custom_operators'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Operators'),
+      '#default_value' => $this->options['custom_operators'],
+      '#description' => t('Use boolean logical operators to customize the FULLTEXT query. Each expression should '.
+                          'be separated by a vertical bar |.<br />'.
+                          'Available operators:  +  -  >  <  (  )  ~  "<br />'.
+                          'See http://dev.mysql.com/doc/refman/5.5/en/fulltext-boolean.html for more information.'),
+      '#maxlength' => 1024,
+      '#fieldset' => 'similar',
+      '#dependency' => array('edit-options-boolean-mode' => array('1'), 'edit-options-enable-custom-operators' => array('1')),
+      '#dependency_count' => 2,
+    );
 
     if (module_exists('field')) {
-      $form['include_fields'] = array(
-        '#type' => 'checkbox',
-        '#title' => t('Include content fields in matching'),
-        '#default_value' => !empty($this->options['include_fields']) ? $this->options['include_fields'] : 0,
-        '#description' => t('Enable FULLTEXT queries on fields defined with Field module.'),
-        '#fieldset' => 'similar',
-      );
       $field_options = array();
       $indices = similar_get_indices();
       foreach (field_info_fields() as $field => $info) {
@@ -72,9 +119,17 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
           }
         }
       }
+
+      $form['include_fields'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Include content fields in matching'),
+        '#default_value' => !empty($this->options['include_fields']) ? $this->options['include_fields'] : 0,
+        '#description' => t('Enable FULLTEXT queries on fields defined with Field module.'),
+        '#fieldset' => 'similar',
+      );
       $form['included_fields'] = array(
         '#type' => 'checkboxes',
-        '#title' => t('Fields to include in search'),
+        '#title' => t('Included fields'),
         '#options' => $field_options,
         '#default_value' => $this->options['included_fields'],
         '#description' => t('Note: Disabling all checkboxes will include all available fields in the query.'),
@@ -148,17 +203,22 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
         $title = preg_replace('/[^a-z0-9 _-]+/i', '', $node->title);
 
         // Increase the relevancy of words in the node title if option is selected.
-        if ($boolean && !empty($this->options['increase_title'])) {
-          $text .= ">". implode(" >", explode(' ', $title));
+        if ($boolean && !empty($this->options['increase_title']) && isset($this->options['title_operator'])) {
+          $title = self::alter_node_title($title, $this->options['title_operator']);
         }
-        else {
-          $text .= $title;
-        }
-        $text .= " {$node->body[$node->language][0]['value']} ";
+        // Strip tags and add slashes only to the body before adding the title.
+        $body = trim(addslashes(strip_tags($node->body[$node->language][0]['value'])));
+        $text .= " $title $body";
       }
     }
-    $text = trim(addslashes(strip_tags($text)));
 
+    if ($boolean && !empty($this->options['enable_custom_operators']) && !empty($this->options['custom_operators'])) {
+      $replacements = array_map('trim', explode('|', $this->options['custom_operators']));
+      $words = array_map('similar_handler_argument_nid::get_search_word', $replacements);
+      $text = preg_replace($words, $replacements, $text);
+    }
+
+    $text = trim($text);
     $this->ensure_my_table();
 
     $selects = array();
@@ -166,8 +226,6 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
       $body_table = $this->query->add_table('field_data_body');
       $selects[] = "$body_table.body_value";
     }
-
-    // @TODO: Consider supporting other types of entities?
 
     // Add more MATCH select statements for extra fields if enabled.
     if ($boolean && module_exists('field') && !empty($this->options['include_fields'])) {
@@ -208,6 +266,15 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
 
   /**
    * Adds a table to the Similar Entries query.
+   *
+   * @param $table
+   *   The table being added. This value comes from a key in similar_get_indices().
+   * @param $indexed
+   *   An array of fields belonging to the table being added. These columns have
+   *   already been indexed by Similar Entries.
+   * @param $selects
+   *   An array of select fields that will be used to build the select query.
+   * @see similar_handler_argument_nid::query()
    */
   private function add_similar_table($table, $indexed, &$selects) {
     if (db_table_exists($table) && !empty($indexed)) {
@@ -219,6 +286,48 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
         $field = array_pop($indexed);
         $selects[] = "$alias.$field";
       }
+    }
+  }
+
+  /**
+   * Converts a user-defined word with operator into a search word for use
+   * in preg_replace().
+   *
+   * @see similar_handler_argument_nid::query()
+   */
+  public static function get_search_word($word) {
+    return '/\b'. trim($word, '+-<>~()"') .'\b/i';
+  }
+
+  /**
+   * Alters the node title's relevance for boolean searches.
+   *
+   * @param $title
+   *   The node title with punctuation removed.
+   * @param $operator
+   *   The operator to apply to the node title.
+   * @see similar_handler_argument_nid::query()
+   */
+  private static function alter_node_title($title, $operator) {
+    switch ($operator) {
+      case 'increase':
+        return '>'. implode(' >', explode(' ', $title));
+      case 'decrease':
+        return '<'. implode(' <', explode(' ', $title));
+      case 'require_all':
+        return '+'. implode(' +', explode(' ', $title));
+      case 'require_some':
+        return "+($title)";
+      case 'require_complete':
+        return '"'. $title .'"';
+      case 'exclude_all':
+        return '-'. implode(' -', explode(' ', $title));
+      case 'exclude_some':
+        return "-($title)";
+      case 'exclude_complete':
+        return '-("'. $title .'")';
+      default:
+        return $title;
     }
   }
 
