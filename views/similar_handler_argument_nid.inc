@@ -19,6 +19,7 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     $options['default_argument_type'] = array('default' => 'node');
     $options['validate']['contains']['type'] = array('default' => 'node');
     $options['validate']['contains']['fail'] = array('default' => 'not found');
+    $options['boolean_mode'] = array('default' => 1);
     $options['increase_title'] = array('default' => 1);
     $options['include_fields'] = array('default' => 0);
     return $options;
@@ -32,11 +33,27 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     unset($form['not']);
     $form['default_argument_type']['#disabled'] = TRUE;
 
+    $form['similar'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('FULLTEXT search options'),
+    );
+    $form['boolean_mode'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Execute search in boolean mode'),
+      '#default_value' => !empty($this->options['boolean_mode']),
+      '#fieldset' => 'similar',
+      '#description' => t('Boolean mode enables the ability to increase or decrease the relevance of certain fields.<br />'.
+                          'Note: Boolean mode may negatively affect the accuracy of view results.'),
+    );
     $form['increase_title'] = array(
       '#type' => 'checkbox',
       '#title' => t('Increase the weight of node titles'),
       '#default_value' => !empty($this->options['increase_title']),
       '#description' => t('Increase the relevance of words in the title of the node being viewed.'),
+      '#fieldset' => 'similar',
+      '#dependency' => array(
+        'edit-options-boolean-mode' => array('1'),
+      ),
     );
     if (module_exists('field')) {
       $form['include_fields'] = array(
@@ -44,6 +61,10 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
         '#title' => t('Include content fields in matching'),
         '#default_value' => !empty($this->options['include_fields']) ? $this->options['include_fields'] : 0,
         '#description' => t('Enable FULLTEXT queries on fields defined with Field module.'),
+        '#fieldset' => 'similar',
+        '#dependency' => array(
+          'edit-options-boolean-mode' => array('1'),
+        ),
       );
     }
   }
@@ -101,9 +122,9 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
    * Builds the query.
    */
   public function query($group_by = FALSE) {
-
     // Since the view could have multiple nid arguments, load each node
     // and populate the $text variable with node titles and bodies.
+    $boolean = !empty($this->options['boolean_mode']);
     $text = '';
     foreach ($this->value as $nid) {
       $node = node_load($nid);
@@ -112,7 +133,7 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
         $title = preg_replace('/[^a-z0-9 _-]+/i', '', $node->title);
 
         // Increase the relevancy of words in the node title if option is selected.
-        if (!empty($this->options['increase_title'])) {
+        if ($boolean && !empty($this->options['increase_title'])) {
           $text .= ">". implode(" >", explode(' ', $title));
         }
         else {
@@ -134,7 +155,7 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     // @TODO: Consider supporting other types of entities?
 
     // Add more MATCH select statements for extra fields if enabled.
-    if (module_exists('field') && $this->options['include_fields'] == 1) {
+    if ($boolean && module_exists('field') && !empty($this->options['include_fields'])) {
       foreach (similar_get_indices() as $table => $indexed) {
         if (!empty($indexed) && db_table_exists($table)) {
           $alias = $this->query->add_table($table);
@@ -151,7 +172,7 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
 
     // An empty string is passed for the table to bypass the table alias.
     $fields = count($selects) > 1 ? implode(", ", $selects) : array_pop($selects);
-    $query = "MATCH($fields) AGAINST('$text' IN BOOLEAN MODE)";
+    $query = $boolean ? "MATCH($fields) AGAINST('$text' IN BOOLEAN MODE)" : "MATCH($fields) AGAINST('$text')";
     $this->query->add_field('', $query, 'score');
 
     // Exclude the current node(s).
