@@ -128,13 +128,9 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     $selects = array();
     if (db_table_exists('field_data_body')) {
       $body_table = $this->query->add_table('field_data_body');
-      $selects[] = "MATCH ($body_table.body_value) AGAINST ('$text' IN BOOLEAN MODE)";
+      $selects[] = "$body_table.body_value";
     }
 
-    // @TODO: Currently the fields query runs successfully, but because
-    // there are multiple FULLTEXT searches occuring on different indexes,
-    // I haven't been able to get an accurate score from the results. When
-    // multiple FULLTEXT searches are executed it switches to boolean mode.
     // @TODO: Consider supporting other types of entities?
 
     // Add more MATCH select statements for extra fields if enabled.
@@ -143,18 +139,19 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
         if (!empty($indexed) && db_table_exists($table)) {
           $alias = $this->query->add_table($table);
           if (count($indexed) > 1) {
-            $selects[] = "MATCH ($alias." . implode(", $alias.", $indexed) . ") AGAINST ('$text' IN BOOLEAN MODE)";
+            $selects[] = "$alias." . implode(", $alias.", $indexed);
           }
           elseif (count($indexed) == 1) {
             $field = array_pop($indexed);
-            $selects[] = "MATCH ($alias.$field) AGAINST ('$text' IN BOOLEAN MODE)";
+            $selects[] = "$alias.$field";
           }
         }
       }
     }
 
     // An empty string is passed for the table to bypass the table alias.
-    $query = count($selects) > 1 ? implode(" OR ", $selects) : array_pop($selects);
+    $fields = count($selects) > 1 ? implode(", ", $selects) : array_pop($selects);
+    $query = "MATCH($fields) AGAINST('$text' IN BOOLEAN MODE)";
     $this->query->add_field('', $query, 'score');
 
     // Exclude the current node(s).
