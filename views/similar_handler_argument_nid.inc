@@ -14,23 +14,30 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
    * Defines default values for argument settings.
    */
   public function option_definition() {
-    $common_words = array('-not', '-and', '-a', '-or', '-the', '-but', '-therefore', '-because', '-can\'t', '-can', '-for',
-      '-until', '-the', '-of', '-and', '-to', '-in', '-is', '-you', '-that', '-it', '-he', '-was', '-on', '-are', '-as', '-with',
-      '-his', '-they', '-I', '-at', '-be', '-this', '-have', '-from', '-one', '-had', '-by', '-word', '-but', '-not', '-what',
-      '-all', '-were', '-we', '-when', '-your', '-said', '-there', '-use', '-an', '-each', '-which', '-she', '-do', '-how',
-      '-their', '-if', '-will', '-up', '-other', '-about', '-out', '-many', '-then', '-them', '-these', '-so', '-some', '-her',
-      '-would', '-make', '-like', '-him', '-into', '-time', '-has', '-look', '-two', '-more', '-write', '-go', '-see', '-no',
-      '-way', '-could', '-people', '-my', '-than', '-first', '-water', '-been', '-call', '-who', '-oil', '-its', '-now', '-find');
+    $common_words = array('-not', '-and', '-a', '-or', '-the', '-but', '-therefore',
+      '-because', '-can\'t', '-can', '-for', '-until', '-the', '-of', '-and', '-to',
+      '-in', '-is', '-you', '-that', '-it', '-he', '-was', '-on', '-are', '-as', '-with',
+      '-his', '-they', '-I', '-at', '-be', '-this', '-have', '-from', '-one', '-had',
+      '-by', '-word', '-but', '-not', '-what', '-all', '-were', '-we', '-when', '-your',
+      '-said', '-there', '-use', '-an', '-each', '-which', '-she', '-do', '-how',
+      '-their', '-if', '-will', '-up', '-other', '-about', '-out', '-many', '-then',
+      '-them', '-these', '-so', '-some', '-her', '-would', '-make', '-like', '-him',
+      '-into', '-time', '-has', '-look', '-two', '-more', '-write', '-go', '-see', '-no',
+      '-way', '-could', '-people', '-my', '-than', '-first', '-water', '-been', '-call',
+      '-who', '-oil', '-its', '-now', '-find');
 
     $options = parent::option_definition();
     $options['default_action'] = array('default' => 'default');
     $options['default_argument_type'] = array('default' => 'node');
     $options['validate']['contains']['type'] = array('default' => 'node');
     $options['boolean_mode'] = array('default' => 0);
+    $options['source_relevance'] = array('default' => 1);
+    $options['title_operator'] = array('default' => 'increase');
+    $options['destination_relevance'] = array('default' => 1);
+    $options['destination_title'] = array('default' => 1.4);
+    $options['destination_body'] = array('default' => 0.8);
     $options['enable_custom_operators'] = array('default' => 0);
     $options['custom_operators'] = array('default' => implode(' | ', $common_words));
-    $options['increase_title'] = array('default' => 1);
-    $options['title_operator'] = array('default' => 'increase');
     $options['include_fields'] = array('default' => 0);
     $options['included_fields'] = array('default' => array());
     return $options;
@@ -56,17 +63,19 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
       '#description' => t('Boolean mode enables the ability to increase or decrease the relevance of certain fields.<br />'.
                           'Note: Boolean mode may negatively affect the accuracy of view results.'),
     );
-    $form['increase_title'] = array(
+
+    // Add options for increasing or decreasing relevance of source node.
+    $form['source_relevance'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Adjust relevance of node title'),
-      '#default_value' => !empty($this->options['increase_title']),
-      '#description' => t('Increase the relevance of words in the title of the node being viewed.'),
+      '#title' => t('Adjust source relevance'),
+      '#default_value' => !empty($this->options['source_relevance']),
+      '#description' => t('Increase the relevance of words in the title of the content being viewed.'),
       '#fieldset' => 'similar',
       '#dependency' => array('edit-options-boolean-mode' => array('1')),
     );
     $form['title_operator'] = array(
       '#type' => 'select',
-      '#title' => t('Title relevance'),
+      '#title' => t('Relevance of source content\'s title'),
       '#options' => array(
         'none' => t('No change'),
         'increase' => t('Increase title relevance'),
@@ -79,14 +88,74 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
         'exclude_complete' => t('Exclude complete title'),
       ),
       '#default_value' => $this->options['title_operator'],
-      '#description' => t('Select an operator to apply to the title of the current node in matching.'),
       '#fieldset' => 'similar',
       '#dependency' => array(
         'edit-options-boolean-mode' => array('1'),
-        'edit-options-increase-title' => array('1'),
+        'edit-options-source-relevance' => array('1'),
       ),
       '#dependency_count' => 2,
     );
+
+    // Add fields for increasing or decreasing relevance of destination ndoe fields.
+    $relevance_options = array(
+      '0' => '0%',
+      '0.1' => '10%',
+      '0.2' => '20%',
+      '0.3' => '30%',
+      '0.4' => '40%',
+      '0.5' => '50%',
+      '0.6' => '60%',
+      '0.7' => '70%',
+      '0.8' => '80%',
+      '0.9' => '90%',
+      '1.0' => '100%',
+      '1.1' => '110%',
+      '1.2' => '120%',
+      '1.3' => '130%',
+      '1.4' => '140%',
+      '1.5' => '150%',
+      '1.6' => '160%',
+      '1.7' => '170%',
+      '1.8' => '180%',
+      '1.9' => '190%',
+      '2.0' => '200%',
+    );
+    $form['destination_relevance'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Adjust destination relevance'),
+      '#default_value' => $this->options['destination_relevance'],
+      '#fieldset' => 'similar',
+      '#dependency' => array('edit-options-boolean-mode' => array('1')),
+    );
+    $form['destination_title'] = array(
+      '#type' => 'select',
+      '#title' => t('Relevance of destination content\'s title.'),
+      '#options' => $relevance_options,
+      '#default_value' => $this->options['destination_title'],
+      '#description' => t('Increase or decrease the relevance of matches in destination content\'s title field.'),
+      '#fieldset' => 'similar',
+      '#dependency' => array(
+        'edit-options-boolean-mode' => array('1'),
+        'edit-options-destination-relevance' => array('1'),
+      ),
+      '#dependency_count' => 2,
+    );
+    $form['destination_body'] = array(
+      '#type' => 'select',
+      '#title' => t('Relevance of destination content\'s body.'),
+      '#options' => $relevance_options,
+      '#default_value' => $this->options['destination_body'],
+      '#description' => t('Increase or decrease the relevance of matches in '.
+                          'destination content\'s body and other fields.'),
+      '#fieldset' => 'similar',
+      '#dependency' => array(
+        'edit-options-boolean-mode' => array('1'),
+        'edit-options-destination-relevance' => array('1'),
+      ),
+      '#dependency_count' => 2,
+    );
+
+    // Add fields for creating custom relevance rules for specific words or phrases.
     $form['enable_custom_operators'] = array(
       '#type' => 'checkbox',
       '#title' => t('Set custom operators in words and phrases'),
@@ -104,10 +173,14 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
                           'See http://dev.mysql.com/doc/refman/5.5/en/fulltext-boolean.html for more information.'),
       '#maxlength' => 1024,
       '#fieldset' => 'similar',
-      '#dependency' => array('edit-options-boolean-mode' => array('1'), 'edit-options-enable-custom-operators' => array('1')),
+      '#dependency' => array(
+        'edit-options-boolean-mode' => array('1'),
+        'edit-options-custom-relevance-enable-custom-operators' => array('1'),
+      ),
       '#dependency_count' => 2,
     );
 
+    // Add fields for enabling matching in fields defined by field module.
     if (module_exists('field')) {
       $field_options = array();
       $indices = similar_get_indices();
@@ -192,26 +265,29 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
    * Builds the query.
    */
   public function query($group_by = FALSE) {
-    // Since the view could have multiple nid arguments, load each node
-    // and populate the $text variable with node titles and bodies.
     $boolean = !empty($this->options['boolean_mode']);
     $text = '';
+
+    // Since the view could have multiple nid arguments, load each node
+    // and populate the $text variable with node titles and bodies.
     foreach ($this->value as $nid) {
       $node = node_load($nid);
       if (isset($node->title) && isset($node->body) && isset($node->body[$node->language])) {
         // Remove punctuation from the title.
         $title = preg_replace('/[^a-z0-9 _-]+/i', '', $node->title);
 
-        // Increase the relevancy of words in the node title if option is selected.
-        if ($boolean && !empty($this->options['increase_title']) && isset($this->options['title_operator'])) {
-          $title = self::alter_node_title($title, $this->options['title_operator']);
+        // Alter the relevancy of words in the node title if option is selected.
+        if ($boolean && !empty($this->options['source_relevance']) && isset($this->options['title_operator'])) {
+          $title = $this->alter_node_title($title);
         }
+
         // Strip tags and add slashes only to the body before adding the title.
         $body = trim(addslashes(strip_tags($node->body[$node->language][0]['value'])));
         $text .= " $title $body";
       }
     }
 
+    // Perform replacements to add custom operators to node body and title words.
     if ($boolean && !empty($this->options['enable_custom_operators']) && !empty($this->options['custom_operators'])) {
       $replacements = array_map('trim', explode('|', $this->options['custom_operators']));
       $words = array_map('similar_handler_argument_nid::get_search_word', $replacements);
@@ -221,6 +297,7 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     $text = trim($text);
     $this->ensure_my_table();
 
+    // field_data_body always belongs in the query if it exists.
     $selects = array();
     if (db_table_exists('field_data_body')) {
       $body_table = $this->query->add_table('field_data_body');
@@ -238,15 +315,29 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
       else {
         foreach ($this->options['included_fields'] as $table => $field) {
           if (isset($indices[$table])) {
-            $this->add_similar_table($table, $indexed, $selects);
+            $this->add_similar_table($table, $indices[$table], $selects);
           }
         }
       }
     }
 
-    // An empty string is passed for the table to bypass the table alias.
+    // Build the MATCH queries.
     $fields = count($selects) > 1 ? implode(", ", $selects) : array_pop($selects);
-    $query = $boolean ? "MATCH($fields) AGAINST('$text' IN BOOLEAN MODE)" : "MATCH($fields) AGAINST('$text')";
+    if ($boolean) {
+      // If the destination relevance option was selected then compile an equation in the query.
+      if (!empty($this->options['destination_relevance'])) {
+        $query = "({$this->options['destination_title']} * (MATCH(node.title) AGAINST('$text' IN BOOLEAN MODE))";
+        $query .= " + ({$this->options['destination_body']} * (MATCH($fields) AGAINST('$text' IN BOOLEAN MODE))))";
+      }
+      else {
+        $query = "MATCH($fields) AGAINST('$text' IN BOOLEAN MODE)";
+      }
+    }
+    else {
+      $query = "MATCH($fields) AGAINST('$text')";
+    }
+    
+    // An empty string is passed for the table to bypass the table alias.
     $this->query->add_field('', $query, 'score');
 
     // Exclude the current node(s).
@@ -308,8 +399,8 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
    *   The operator to apply to the node title.
    * @see similar_handler_argument_nid::query()
    */
-  private static function alter_node_title($title, $operator) {
-    switch ($operator) {
+  private function alter_node_title($title) {
+    switch ($this->options['title_operator']) {
       case 'increase':
         return '>'. implode(' >', explode(' ', $title));
       case 'decrease':
