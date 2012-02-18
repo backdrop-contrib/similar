@@ -51,10 +51,9 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
       '#default_value' => !empty($this->options['increase_title']),
       '#description' => t('Increase the relevance of words in the title of the node being viewed.'),
       '#fieldset' => 'similar',
-      '#dependency' => array(
-        'edit-options-boolean-mode' => array('1'),
-      ),
+      '#dependency' => array('edit-options-boolean-mode' => array('1')),
     );
+
     if (module_exists('field')) {
       $form['include_fields'] = array(
         '#type' => 'checkbox',
@@ -62,9 +61,25 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
         '#default_value' => !empty($this->options['include_fields']) ? $this->options['include_fields'] : 0,
         '#description' => t('Enable FULLTEXT queries on fields defined with Field module.'),
         '#fieldset' => 'similar',
-        '#dependency' => array(
-          'edit-options-boolean-mode' => array('1'),
-        ),
+      );
+      $field_options = array();
+      $indices = similar_get_indices();
+      foreach (field_info_fields() as $field => $info) {
+        if ($info['type'] == 'text') {
+          $table = key($info['storage']['details']['sql'][FIELD_LOAD_CURRENT]);
+          if (isset($indices[$table])) {
+            $field_options[$table] = $field;
+          }
+        }
+      }
+      $form['included_fields'] = array(
+        '#type' => 'checkboxes',
+        '#title' => t('Fields to include in search'),
+        '#options' => $field_options,
+        '#default_value' => $this->options['included_fields'],
+        '#description' => t('Note: Disabling all checkboxes will include all available fields in the query.'),
+        '#fieldset' => 'similar',
+        '#dependency' => array('edit-options-include-fields' => array('1')),
       );
     }
   }
@@ -156,15 +171,16 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
 
     // Add more MATCH select statements for extra fields if enabled.
     if ($boolean && module_exists('field') && !empty($this->options['include_fields'])) {
-      foreach (similar_get_indices() as $table => $indexed) {
-        if (!empty($indexed) && db_table_exists($table)) {
-          $alias = $this->query->add_table($table);
-          if (count($indexed) > 1) {
-            $selects[] = "$alias." . implode(", $alias.", $indexed);
-          }
-          elseif (count($indexed) == 1) {
-            $field = array_pop($indexed);
-            $selects[] = "$alias.$field";
+      $indices = similar_get_indices();
+      if (empty($this->options['included_fields'])) {
+        foreach ($indices as $table => $indexed) {
+          $this->add_similar_table($table, $indexed, $selects);
+        }
+      }
+      else {
+        foreach ($this->options['included_fields'] as $table => $field) {
+          if (isset($indices[$table])) {
+            $this->add_similar_table($table, $indexed, $selects);
           }
         }
       }
@@ -188,6 +204,22 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
 
     // Add a Similar Entries tag to indicate that filters and sort handlers are valid.
     $this->query->add_tag('similar_entries');
+  }
+
+  /**
+   * Adds a table to the Similar Entries query.
+   */
+  private function add_similar_table($table, $indexed, &$selects) {
+    if (db_table_exists($table) && !empty($indexed)) {
+      $alias = $this->query->add_table($table);
+      if (count($indexed) > 1) {
+        $selects[] = "$alias." . implode(", $alias.", $indexed);
+      }
+      elseif (count($indexed) == 1) {
+        $field = array_pop($indexed);
+        $selects[] = "$alias.$field";
+      }
+    }
   }
 
 }
