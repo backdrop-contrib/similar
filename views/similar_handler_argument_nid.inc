@@ -38,12 +38,14 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     $options['title_operator'] = array('default' => 'increase');
     $options['enable_custom_operators'] = array('default' => 0);
     $options['custom_operators'] = array('default' => implode(' | ', $common_words));
-    $options['include_fields'] = array('default' => 0);
+    if (module_exists('field')) {
+      $options['include_fields'] = array('default' => 0);
 
-    // Notify Views of individual field weights.
-    // Note: the Views cache may need to be reset when fields are added.
-    foreach (self::get_field_options() as $table => $field) {
-      $options['included_fields:'. $table] = array('default' => 1);
+      // Notify Views of individual field weights.
+      // Note: the Views cache may need to be reset when fields are added.
+      foreach (self::get_field_options() as $table => $field) {
+        $options['included_fields:'. $table] = array('default' => 1);
+      }
     }
     return $options;
   }
