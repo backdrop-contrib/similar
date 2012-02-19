@@ -31,15 +31,20 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     $options['default_argument_type'] = array('default' => 'node');
     $options['validate']['contains']['type'] = array('default' => 'node');
     $options['boolean_mode'] = array('default' => 0);
+    $options['adjust_relevance'] = array('default' => 1);
+    $options['title_relevance'] = array('default' => 1.4);
+    $options['body_relevance'] = array('default' => 0.8);
     $options['source_relevance'] = array('default' => 1);
     $options['title_operator'] = array('default' => 'increase');
-    $options['destination_relevance'] = array('default' => 1);
-    $options['destination_title'] = array('default' => 1.4);
-    $options['destination_body'] = array('default' => 0.8);
     $options['enable_custom_operators'] = array('default' => 0);
     $options['custom_operators'] = array('default' => implode(' | ', $common_words));
     $options['include_fields'] = array('default' => 0);
-    $options['included_fields'] = array('default' => array());
+
+    // Notify Views of individual field weights.
+    // Note: the Views cache may need to be reset when fields are added.
+    foreach (self::get_field_options() as $table => $field) {
+      $options['included_fields:'. $table] = array('default' => 1);
+    }
     return $options;
   }
 
@@ -55,6 +60,85 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
       '#type' => 'fieldset',
       '#title' => t('FULLTEXT search options'),
     );
+
+    // Add fields for increasing or decreasing relevance of destination ndoe fields.
+    $relevance_options = array(
+        '0' => '0%',
+        '0.1' => '10%',
+        '0.2' => '20%',
+        '0.3' => '30%',
+        '0.4' => '40%',
+        '0.5' => '50%',
+        '0.6' => '60%',
+        '0.7' => '70%',
+        '0.8' => '80%',
+        '0.9' => '90%',
+        '1.0' => '100%',
+        '1.1' => '110%',
+        '1.2' => '120%',
+        '1.3' => '130%',
+        '1.4' => '140%',
+        '1.5' => '150%',
+        '1.6' => '160%',
+        '1.7' => '170%',
+        '1.8' => '180%',
+        '1.9' => '190%',
+        '2.0' => '200%',
+    );
+    $form['adjust_relevance'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Adjust relevance of fields'),
+      '#default_value' => $this->options['adjust_relevance'],
+      '#description' => t('Adjust the relevance of content titles, bodies, and other fields in matching.'),
+      '#fieldset' => 'similar',
+    );
+    $form['title_relevance'] = array(
+      '#type' => 'select',
+      '#title' => t('Relevance of content\'s title.'),
+      '#options' => $relevance_options,
+      '#default_value' => $this->options['title_relevance'],
+      '#description' => t('Increase or decrease the relevance of matches in destination content\'s title field.'),
+      '#fieldset' => 'similar',
+      '#dependency' => array('edit-options-adjust-relevance' => array('1')),
+    );
+    $form['body_relevance'] = array(
+      '#type' => 'select',
+      '#title' => t('Relevance of content\'s body.'),
+      '#options' => $relevance_options,
+      '#default_value' => $this->options['body_relevance'],
+      '#description' => t('Increase or decrease the relevance of matches in '.
+                          'destination content\'s body and other fields.'),
+      '#fieldset' => 'similar',
+      '#dependency' => array('edit-options-adjust-relevance' => array('1')),
+    );
+
+    // Add fields for enabling matching in fields defined by field module.
+    if (module_exists('field')) {
+      $field_options = self::get_field_options();
+
+      $form['include_fields'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Include content fields in matching'),
+        '#default_value' => !empty($this->options['include_fields']),
+        '#description' => t('Enable FULLTEXT queries on fields defined with Field module.'),
+        '#fieldset' => 'similar',
+      );
+      foreach ($field_options as $table => $field) {
+        $form['included_fields:'. $table] = array(
+          '#type' => 'select',
+          '#title' => $field,
+          '#options' => $relevance_options,
+          '#default_value' => isset($this->options['included_fields:'. $table]) ? $this->options['included_fields:'. $table] : 1,
+          '#fieldset' => 'similar',
+          '#dependency' => array(
+            'edit-options-include-fields' => array('1'),
+            'edit-options-adjust-relevance' => array('1'),
+          ),
+          '#dependency_count' => 2,
+        );
+      }
+    }
+
     $form['boolean_mode'] = array(
       '#type' => 'checkbox',
       '#title' => t('Execute search in boolean mode'),
@@ -96,65 +180,6 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
       '#dependency_count' => 2,
     );
 
-    // Add fields for increasing or decreasing relevance of destination ndoe fields.
-    $relevance_options = array(
-      '0' => '0%',
-      '0.1' => '10%',
-      '0.2' => '20%',
-      '0.3' => '30%',
-      '0.4' => '40%',
-      '0.5' => '50%',
-      '0.6' => '60%',
-      '0.7' => '70%',
-      '0.8' => '80%',
-      '0.9' => '90%',
-      '1.0' => '100%',
-      '1.1' => '110%',
-      '1.2' => '120%',
-      '1.3' => '130%',
-      '1.4' => '140%',
-      '1.5' => '150%',
-      '1.6' => '160%',
-      '1.7' => '170%',
-      '1.8' => '180%',
-      '1.9' => '190%',
-      '2.0' => '200%',
-    );
-    $form['destination_relevance'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Adjust destination relevance'),
-      '#default_value' => $this->options['destination_relevance'],
-      '#fieldset' => 'similar',
-      '#dependency' => array('edit-options-boolean-mode' => array('1')),
-    );
-    $form['destination_title'] = array(
-      '#type' => 'select',
-      '#title' => t('Relevance of destination content\'s title.'),
-      '#options' => $relevance_options,
-      '#default_value' => $this->options['destination_title'],
-      '#description' => t('Increase or decrease the relevance of matches in destination content\'s title field.'),
-      '#fieldset' => 'similar',
-      '#dependency' => array(
-        'edit-options-boolean-mode' => array('1'),
-        'edit-options-destination-relevance' => array('1'),
-      ),
-      '#dependency_count' => 2,
-    );
-    $form['destination_body'] = array(
-      '#type' => 'select',
-      '#title' => t('Relevance of destination content\'s body.'),
-      '#options' => $relevance_options,
-      '#default_value' => $this->options['destination_body'],
-      '#description' => t('Increase or decrease the relevance of matches in '.
-                          'destination content\'s body and other fields.'),
-      '#fieldset' => 'similar',
-      '#dependency' => array(
-        'edit-options-boolean-mode' => array('1'),
-        'edit-options-destination-relevance' => array('1'),
-      ),
-      '#dependency_count' => 2,
-    );
-
     // Add fields for creating custom relevance rules for specific words or phrases.
     $form['enable_custom_operators'] = array(
       '#type' => 'checkbox',
@@ -175,41 +200,10 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
       '#fieldset' => 'similar',
       '#dependency' => array(
         'edit-options-boolean-mode' => array('1'),
-        'edit-options-custom-relevance-enable-custom-operators' => array('1'),
+        'edit-options-enable-custom-operators' => array('1'),
       ),
       '#dependency_count' => 2,
     );
-
-    // Add fields for enabling matching in fields defined by field module.
-    if (module_exists('field')) {
-      $field_options = array();
-      $indices = similar_get_indices();
-      foreach (field_info_fields() as $field => $info) {
-        if ($info['type'] == 'text') {
-          $table = key($info['storage']['details']['sql'][FIELD_LOAD_CURRENT]);
-          if (isset($indices[$table])) {
-            $field_options[$table] = $field;
-          }
-        }
-      }
-
-      $form['include_fields'] = array(
-        '#type' => 'checkbox',
-        '#title' => t('Include content fields in matching'),
-        '#default_value' => !empty($this->options['include_fields']) ? $this->options['include_fields'] : 0,
-        '#description' => t('Enable FULLTEXT queries on fields defined with Field module.'),
-        '#fieldset' => 'similar',
-      );
-      $form['included_fields'] = array(
-        '#type' => 'checkboxes',
-        '#title' => t('Included fields'),
-        '#options' => $field_options,
-        '#default_value' => $this->options['included_fields'],
-        '#description' => t('Note: Disabling all checkboxes will include all available fields in the query.'),
-        '#fieldset' => 'similar',
-        '#dependency' => array('edit-options-include-fields' => array('1')),
-      );
-    }
   }
 
   /**
@@ -297,45 +291,7 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     $text = trim($text);
     $this->ensure_my_table();
 
-    // field_data_body always belongs in the query if it exists.
-    $selects = array();
-    if (db_table_exists('field_data_body')) {
-      $body_table = $this->query->add_table('field_data_body');
-      $selects[] = "$body_table.body_value";
-    }
-
-    // Add more MATCH select statements for extra fields if enabled.
-    if ($boolean && module_exists('field') && !empty($this->options['include_fields'])) {
-      $indices = similar_get_indices();
-      if (empty($this->options['included_fields'])) {
-        foreach ($indices as $table => $indexed) {
-          $this->add_similar_table($table, $indexed, $selects);
-        }
-      }
-      else {
-        foreach ($this->options['included_fields'] as $table => $field) {
-          if (isset($indices[$table])) {
-            $this->add_similar_table($table, $indices[$table], $selects);
-          }
-        }
-      }
-    }
-
-    // Build the MATCH queries.
-    $fields = count($selects) > 1 ? implode(", ", $selects) : array_pop($selects);
-    if ($boolean) {
-      // If the destination relevance option was selected then compile an equation in the query.
-      if (!empty($this->options['destination_relevance'])) {
-        $query = "({$this->options['destination_title']} * (MATCH(node.title) AGAINST('$text' IN BOOLEAN MODE))";
-        $query .= " + ({$this->options['destination_body']} * (MATCH($fields) AGAINST('$text' IN BOOLEAN MODE))))";
-      }
-      else {
-        $query = "MATCH($fields) AGAINST('$text' IN BOOLEAN MODE)";
-      }
-    }
-    else {
-      $query = "MATCH($fields) AGAINST('$text')";
-    }
+    $query = $boolean ? $this->similar_build_query($text, 'IN BOOLEAN MODE') : $this->similar_build_query($text);
     
     // An empty string is passed for the table to bypass the table alias.
     $this->query->add_field('', $query, 'score');
@@ -356,28 +312,46 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
   }
 
   /**
-   * Adds a table to the Similar Entries query.
-   *
-   * @param $table
-   *   The table being added. This value comes from a key in similar_get_indices().
-   * @param $indexed
-   *   An array of fields belonging to the table being added. These columns have
-   *   already been indexed by Similar Entries.
-   * @param $selects
-   *   An array of select fields that will be used to build the select query.
+   * Builds a query from argument configuration options.
+   * @param $text
+   *   The text of the current node to be used in the query.
+   * @param $modifier
+   *   An optional FULLTEXT search modifer. ie 'IN BOOLEAN MODE'.
    * @see similar_handler_argument_nid::query()
    */
-  private function add_similar_table($table, $indexed, &$selects) {
-    if (db_table_exists($table) && !empty($indexed)) {
-      $alias = $this->query->add_table($table);
-      if (count($indexed) > 1) {
-        $selects[] = "$alias." . implode(", $alias.", $indexed);
-      }
-      elseif (count($indexed) == 1) {
-        $field = array_pop($indexed);
-        $selects[] = "$alias.$field";
+  public function similar_build_query($text, $modifier = '') {
+    $query = array();
+    if (!empty($modifier)) {
+      $modifier = " $modifier";
+    }
+
+    $weight = !empty($this->options['adjust_relevance']) && isset($this->options['title_relevance'])
+      ? $this->options['title_relevance'] : 1;
+    $query[] = "($weight * (MATCH(node.title) AGAINST('$text'$modifier)))";
+
+    // The body field is always included in the query if it exists.
+    if (db_table_exists('field_data_body')) {
+      $weight = !empty($this->options['adjust_relevance']) ? $this->options['body_relevance'] : 1;
+      $body_table = $this->query->add_table('field_data_body');
+
+      if ($weight !== 0) {
+        $query[] = "($weight * (MATCH($body_table.body_value) AGAINST('$text'$modifier)))";
       }
     }
+
+    if (module_exists('field') && !empty($this->options['include_fields'])) {
+      $indices = similar_get_indices();
+      foreach (self::get_field_options() as $table => $value) {
+        $weight = !empty($this->options['adjust_relevance']) && isset($this->options['included_fields:'. $table])
+          ? $this->options['included_fields:'. $table] : 1;
+        $alias = $this->query->add_table($table);
+        $fields = "$alias." . implode(", $alias.", $indices[$table]);
+        $query[] = "($weight * (MATCH($fields) AGAINST('$text'$modifier)))";
+      }
+    }
+    // Return a query that calculates an average score to prevent scores from fluctuating too much.
+    // We multiply the score by different amounts depending on the modifier used.
+    return "((". implode(" + ", $query) . ") / ". count($query) .")";
   }
 
   /**
@@ -420,6 +394,23 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
       default:
         return $title;
     }
+  }
+
+  /**
+   * Returns an array of fields that have been indexed by Similar Entries.
+   */
+  private static function get_field_options() {
+    $field_options = array();
+    $indices = similar_get_indices();
+    foreach (field_info_fields() as $field => $info) {
+      if ($info['type'] == 'text') {
+        $table = key($info['storage']['details']['sql'][FIELD_LOAD_CURRENT]);
+        if (isset($indices[$table])) {
+          $field_options[$table] = $field;
+        }
+      }
+    }
+    return $field_options;
   }
 
 }

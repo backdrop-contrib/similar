@@ -54,9 +54,7 @@ function similar_cron() {
     }
     // For each table check if the index needs to be reset.
     foreach ($data as $table => $fields) {
-      if (!isset($indices[$table]) || $data[$table] !== $indices[$table]) {
-        _similar_add_index($table, $data[$table]);
-      }
+      _similar_add_index($table, $data[$table]);
     }
   }
 }

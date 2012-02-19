@@ -18,6 +18,7 @@ class similar_handler_field_similarity extends views_handler_field {
     $options['score_type'] = array('default' => 1);
     $options['round_decimal'] = array('default' => 0);
     $options['percent_suffix'] = array('default' => 1);
+    $options['multiply_score'] = array('default' => 1);
     return $options;
   }
 
@@ -51,7 +52,21 @@ class similar_handler_field_similarity extends views_handler_field {
       '#type' => 'checkbox',
       '#title' => t('Append % when showing percentage'),
       '#default_value' => !empty($this->options['percent_suffix']),
-    );    
+    );
+
+    $score_options = array(
+      '0.1' => '0.1', '0.2' => '0.2', '0.3' => '0.3', '0.4' => '0.4', '0.5' => '0.5',
+      '0.6' => '0.6', '0.7' => '0.7', '0.8' => '0.8', '0.9' => '0.9',
+    );
+    for ($i = 1; $i < 101; $i++) {
+      $score_options[$i] = $i;
+    }
+    $form['multiply_score'] = array(
+      '#type' => 'select',
+      '#title' => t('Multiply score by'),
+      '#options' => $score_options,
+      '#default_value' => $this->options['multiply_score'],
+    );
   }
 
   function query() {}
@@ -60,8 +75,7 @@ class similar_handler_field_similarity extends views_handler_field {
    * Renders the score as a number or a percentage that cannot exceed 50.
    */
   function render($values) {
-    $score = round($values->score / 10, $this->options['round_decimal']);
-    $output = $score > 50 ? 50 : $score;
+    $output = round($values->score * $this->options['multiply_score'], $this->options['round_decimal']);
     if ($this->options['score_type'] == 0) {
       return $output;
     }
