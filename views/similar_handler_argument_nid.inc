@@ -315,10 +315,15 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
 
   /**
    * Builds a query from argument configuration options.
+   *
    * @param $text
    *   The text of the current node to be used in the query.
    * @param $modifier
    *   An optional FULLTEXT search modifer. ie 'IN BOOLEAN MODE'.
+   *
+   * @return string
+   *   A FULLTEXT expression string.
+   *
    * @see similar_handler_argument_nid::query()
    */
   public function similar_build_query($text, $modifier = '') {
@@ -360,6 +365,9 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
    * Converts a user-defined word with operator into a search word for use
    * in preg_replace().
    *
+   * @return string
+   *   The word as prepared for use in a regular expression search.
+   *
    * @see similar_handler_argument_nid::query()
    */
   public static function get_search_word($word) {
@@ -369,10 +377,12 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
   /**
    * Alters the node title's relevance for boolean searches.
    *
-   * @param $title
+   * @param string $title
    *   The node title with punctuation removed.
-   * @param $operator
-   *   The operator to apply to the node title.
+   *
+   * @return string
+   *   The node title with new operators.
+   *
    * @see similar_handler_argument_nid::query()
    */
   private function alter_node_title($title) {

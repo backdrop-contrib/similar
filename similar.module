@@ -71,9 +71,9 @@ function similar_cron() {
  * should be compared against the existing index as stored in the
  * similar_indices variable.
  *
- * @param $table
+ * @param string $table
  *   A string representing the table to index.
- * @param $fields
+ * @param array $fields
  *   An array of column names to add to the index. Even though most,
  *   if not all of our tables will only have one indexed column, we
  *   still may need to add multiple fields some time.
@@ -107,9 +107,10 @@ function _similar_add_index($table, $fields) {
  * to do is look into ways to reset the variable upon reasonable events
  * like a field module install/uninstall or a cache clearance.
  *
- * @param $table
+ * @param string|null $table
  *   An optional string identifying a specific table's indices to return.
- * @return
+ *
+ * @return array
  *   An array of sub-arrays where the key is a table name and the value
  *   is an array of fields which are currently indexed in the table.
  */
