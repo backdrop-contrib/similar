@@ -346,7 +346,7 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
       foreach (self::get_field_options() as $table => $value) {
         $weight = !empty($this->options['adjust_relevance']) && isset($this->options['included_fields:'. $table])
           ? $this->options['included_fields:'. $table] : 1;
-        $alias = $this->query->add_table($table);
+        $alias = $this->query->ensure_table($table);
         $fields = "$alias." . implode(", $alias.", $indices[$table]);
         $query[] = "($weight * (MATCH($fields) AGAINST('$text'$modifier)))";
       }
