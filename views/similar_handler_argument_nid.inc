@@ -38,13 +38,13 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     $options['title_operator'] = array('default' => 'increase');
     $options['enable_custom_operators'] = array('default' => 0);
     $options['custom_operators'] = array('default' => implode(' | ', $common_words));
+    
+    // Notify Views of individual field weights.
+    // Note: the Views cache may need to be reset when fields are added.
     if (module_exists('field')) {
       $options['include_fields'] = array('default' => 0);
-
-      // Notify Views of individual field weights.
-      // Note: the Views cache may need to be reset when fields are added.
-      foreach (self::get_field_options() as $table => $field) {
-        $options['included_fields:'. $table] = array('default' => 1);
+      foreach (similar_get_indices() as $field => $info) {
+        $options['included_fields:'. $field] = array('default' => 1);
       }
     }
     return $options;
@@ -116,8 +116,8 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
 
     // Add fields for enabling matching in fields defined by field module.
     if (module_exists('field')) {
-      $field_options = self::get_field_options();
 
+      // Checkbox to enable fields in query.
       $form['include_fields'] = array(
         '#type' => 'checkbox',
         '#title' => t('Include content fields in matching'),
@@ -125,12 +125,14 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
         '#description' => t('Enable FULLTEXT queries on fields defined with Field module.'),
         '#fieldset' => 'similar',
       );
-      foreach ($field_options as $table => $field) {
-        $form['included_fields:'. $table] = array(
+
+      // Add a weight select list for each field defined by Field module.
+      foreach (similar_get_indices() as $field => $info) {
+        $form['included_fields:'. $field] = array(
           '#type' => 'select',
-          '#title' => $field,
+          '#title' => isset($info['label']) ? $info['label'] : $field,
           '#options' => $relevance_options,
-          '#default_value' => isset($this->options['included_fields:'. $table]) ? $this->options['included_fields:'. $table] : 1,
+          '#default_value' => isset($this->options['included_fields:'. $field]) ? $this->options['included_fields:'. $field] : 1,
           '#fieldset' => 'similar',
           '#dependency' => array(
             'edit-options-include-fields' => array('1'),
@@ -316,9 +318,9 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
   /**
    * Builds a query from argument configuration options.
    *
-   * @param $text
+   * @param string $text
    *   The text of the current node to be used in the query.
-   * @param $modifier
+   * @param string $modifier
    *   An optional FULLTEXT search modifer. ie 'IN BOOLEAN MODE'.
    *
    * @return string
@@ -334,7 +336,7 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
 
     $weight = !empty($this->options['adjust_relevance']) && isset($this->options['title_relevance'])
       ? $this->options['title_relevance'] : 1;
-    $query[] = "($weight * (MATCH(node.title) AGAINST('$text'$modifier)))";
+    $query[] = "($weight * (MATCH (node.title) AGAINST ('$text'$modifier)))";
 
     // The body field is always included in the query if it exists.
     if (db_table_exists('field_data_body')) {
@@ -342,18 +344,17 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
       $body_table = $this->query->add_table('field_data_body');
 
       if ($weight !== 0) {
-        $query[] = "($weight * (MATCH($body_table.body_value) AGAINST('$text'$modifier)))";
+        $query[] = "($weight * (MATCH ($body_table.body_value) AGAINST ('$text'$modifier)))";
       }
     }
 
-    if (module_exists('field') && !empty($this->options['include_fields'])) {
-      $indices = similar_get_indices();
-      foreach (self::get_field_options() as $table => $value) {
-        $weight = !empty($this->options['adjust_relevance']) && isset($this->options['included_fields:'. $table])
-          ? $this->options['included_fields:'. $table] : 1;
-        $alias = $this->query->ensure_table($table);
-        $fields = "$alias." . implode(", $alias.", $indices[$table]);
-        $query[] = "($weight * (MATCH($fields) AGAINST('$text'$modifier)))";
+    // Add additional MATCH queries for fields if enabled.
+    if (!empty($this->options['include_fields']) && module_exists('field')) {
+      foreach (similar_get_indices() as $field => $info) {
+        $weight = !empty($this->options['adjust_relevance']) && isset($this->options['included_fields:'. $field])
+          ? $this->options['included_fields:'. $field] : 1;
+        $alias = $this->query->ensure_table($info['table']);
+        $query[] = "($weight * (MATCH ($alias.{$info['column']}) AGAINST ('$text'$modifier)))";
       }
     }
     // Return a query that calculates an average score to prevent scores from fluctuating too much.
@@ -406,23 +407,6 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
       default:
         return $title;
     }
-  }
-
-  /**
-   * Returns an array of fields that have been indexed by Similar Entries.
-   */
-  private static function get_field_options() {
-    $field_options = array();
-    $indices = similar_get_indices();
-    foreach (field_info_fields() as $field => $info) {
-      if ($info['type'] == 'text') {
-        $table = key($info['storage']['details']['sql'][FIELD_LOAD_CURRENT]);
-        if (isset($indices[$table])) {
-          $field_options[$table] = $field;
-        }
-      }
-    }
-    return $field_options;
   }
 
 }
