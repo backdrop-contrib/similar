@@ -343,7 +343,7 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
       $weight = !empty($this->options['adjust_relevance']) ? $this->options['body_relevance'] : 1;
       $body_table = $this->query->add_table('field_data_body');
 
-      if ($weight !== 0) {
+      if ($weight !== '0') {
         $query[] = "($weight * (MATCH ($body_table.body_value) AGAINST ('$text'$modifier)))";
       }
     }
