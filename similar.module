@@ -43,9 +43,14 @@ function similar_cron() {
  * Clears all Similar Entries indices.
  */
 function similar_reset_indices() {
-  foreach (similar_get_indices() as $field => $info) {
-    if (db_table_exists($info['table']) && db_index_exists($info['table'], $info['index'])) {
-      db_drop_index($info['table'], $info['index']);
+  $indices = similar_get_indices();
+  if (!empty($indices)) {
+    foreach ($indices as $field => $info) {
+      if ((isset($info['table'])) && (isset($info['index']))) {
+        if (db_table_exists($info['table']) && db_index_exists($info['table'], $info['index'])) {
+          db_drop_index($info['table'], $info['index']);
+        }
+      }
     }
   }
   variable_del(SIMILAR_INDICES);
