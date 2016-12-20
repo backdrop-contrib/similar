@@ -270,7 +270,13 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     // and populate the $text variable with node titles and bodies.
     foreach ($this->value as $nid) {
       $node = node_load($nid);
-      if (isset($node->title) && isset($node->body) && isset($node->body[$node->language])) {
+
+      // Check language setting of content type
+      $node_language_setting = variable_get('language_content_type_' . $node->type, 0);
+      if ($node_language_setting == 0) {
+        $node->language = LANGUAGE_NONE;
+        
+      }      if (isset($node->title) && isset($node->body) && isset($node->body[$node->language])) {
         // Remove punctuation from the title.
         $title = preg_replace('/[^a-z0-9 _-]+/i', '', $node->title);
 
