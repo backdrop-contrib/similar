@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Defines the Similar entries node ID argument.
@@ -31,6 +30,8 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     $options['default_argument_type'] = array('default' => 'node');
     $options['validate']['contains']['type'] = array('default' => 'node');
     $options['boolean_mode'] = array('default' => 0);
+    $options['rendered_content'] = array('default' => 0);
+    $options['rendered_view_mode'] = array('default' => 'full');
     $options['adjust_relevance'] = array('default' => 1);
     $options['title_relevance'] = array('default' => 1.4);
     $options['body_relevance'] = array('default' => 0.8);
@@ -38,7 +39,7 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     $options['title_operator'] = array('default' => 'increase');
     $options['enable_custom_operators'] = array('default' => 0);
     $options['custom_operators'] = array('default' => implode(' | ', $common_words));
-    
+
     // Notify Views of individual field weights.
     // Note: the Views cache may need to be reset when fields are added.
     if (module_exists('field')) {
@@ -87,6 +88,9 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
         '1.9' => '190%',
         '2.0' => '200%',
     );
+    foreach (entity_get_info('node')['view modes'] as $key => $values) {
+      $render_view_mode_options[$key] = $values['label'];
+    }
     $form['adjust_relevance'] = array(
       '#type' => 'checkbox',
       '#title' => t('Adjust relevance of fields'),
@@ -112,6 +116,21 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
                           'destination content\'s body and other fields.'),
       '#fieldset' => 'similar',
       '#dependency' => array('edit-options-adjust-relevance' => array('1')),
+    );
+    $form['rendered_content'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Use rendered source content instead of body'),
+      '#default_value' => $this->options['rendered_content'],
+      '#description' => t('Score similarity by comparing to source content rendered in a view mode, rather than body value.'),
+      '#fieldset' => 'similar',
+    );
+    $form['rendered_view_mode'] = array(
+      '#type' => 'select',
+      '#title' => t('View mode to render content'),
+      '#options' => $render_view_mode_options,
+      '#default_value' => $this->options['rendered_view_mode'],
+      '#fieldset' => 'similar',
+      '#dependency' => array('edit-options-rendered-content' => array('1')),
     );
 
     // Add fields for enabling matching in fields defined by field module.
@@ -245,13 +264,13 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     $this->view->nids = $this->value;
     return TRUE;
   }
-  
+
   /**
    * Override the behavior of title(). Get the title of the node.
    */
   function title_query() {
     $titles = array();
-  
+
     $result = db_query("SELECT n.title FROM {node} n WHERE n.nid IN (:nids)", array(':nids' => $this->value));
     foreach ($result as $term) {
       $titles[] = check_plain($term->title);
@@ -271,12 +290,17 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     foreach ($this->value as $nid) {
       $node = node_load($nid);
 
+      if ($this->options['rendered_content']) {
+        $node_view = node_view($node, $this->options['rendered_view_mode'], $node->language);
+        $node->body[$node->language][0]['value'] = render($node_view);
+      }
+=
       // Check language setting of content type
       $node_language_setting = variable_get('language_content_type_' . $node->type, 0);
       if ($node_language_setting == 0) {
         $node->language = LANGUAGE_NONE;
-        
-      }      if (isset($node->title) && isset($node->body) && isset($node->body[$node->language])) {
+      }
+      if (isset($node->title) && isset($node->body) && isset($node->body[$node->language])) {
         // Remove punctuation from the title.
         $title = preg_replace('/[^a-z0-9 _-]+/i', '', $node->title);
 
@@ -302,7 +326,7 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     $this->ensure_my_table();
 
     $query = $boolean ? $this->similar_build_query($text, 'IN BOOLEAN MODE') : $this->similar_build_query($text);
-    
+
     // An empty string is passed for the table to bypass the table alias.
     $this->query->add_field('', $query, 'score');
 
