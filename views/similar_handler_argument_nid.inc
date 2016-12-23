@@ -309,13 +309,13 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
         if ($boolean && !empty($this->options['source_relevance']) && isset($this->options['title_operator'])) {
           $title = $this->alter_node_title($title);
         }
-        $text .= " $title";
+        $text .= ' ' . $title;
       }
 
       if (isset($node->body) && isset($node->body[$node->language])) {
         // Strip tags and add slashes only to the body before adding the title.
         $body = trim(addslashes(strip_tags($node->body[$node->language][0]['safe_value'])));
-        $text .= " $body";
+        $text .= ' ' . $body;
       }
     }
 
