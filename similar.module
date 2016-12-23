@@ -67,7 +67,7 @@ function similar_index_fields() {
   if (module_exists('field')) {
     // Get all text columns defined for fields in the database.
     foreach (field_info_fields() as $field => $info) {
-      if ($info['type'] == 'text') {
+      if ($info['type'] == 'text' || $info['type'] == 'text_long') {
         $table = key($info['storage']['details']['sql'][FIELD_LOAD_CURRENT]);
         $column = $info['storage']['details']['sql'][FIELD_LOAD_CURRENT][$table]['value'];
         similar_index($field, $table, $column, array('label' => $info['field_name']));
@@ -93,14 +93,16 @@ function similar_index_fields() {
  *   TRUE otherwise.
  */
 function similar_index($field, $table, $column, $info = array()) {
-  // Return FALSE if the field doesn't exist or is already indexed.
+  // Return FALSE if the field doesn't exist.
   $index = "similar_$field";
-  if (!db_table_exists($table) || !db_field_exists($table, $column) || db_index_exists($table, $index)) {
+  if (!db_table_exists($table) || !db_field_exists($table, $column)) {
     return FALSE;
   }
 
-  db_query("ALTER TABLE {". $table ."} ENGINE = MYISAM");
-  db_query("ALTER TABLE {". $table ."} ADD FULLTEXT `$index` (`$column`)");
+  if (!db_index_exists($table, $index)) {
+    db_query("ALTER TABLE {" . $table . "} ENGINE = MYISAM");
+    db_query("ALTER TABLE {" . $table . "} ADD FULLTEXT `$index` (`$column`)");
+  }
 
   // Add data to the info array for storage in similar indices variable.
   $info += array('index' => $index);
@@ -133,7 +135,7 @@ function _similar_save_index($field, $table, $column, $info) {
   }
 
   $info += array('table' => $table, 'column' => $column);
-  $indices = similar_get_indices();
+  $indices = variable_get(SIMILAR_INDICES);
   $indices[$field] = $info;
   variable_set(SIMILAR_INDICES, $indices);
 

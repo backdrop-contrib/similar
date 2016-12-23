@@ -88,7 +88,8 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
         '1.9' => '190%',
         '2.0' => '200%',
     );
-    foreach (entity_get_info('node')['view modes'] as $key => $values) {
+    $entity_info = entity_get_info('node');
+    foreach ($entity_info['view modes'] as $key => $values) {
       $render_view_mode_options[$key] = $values['label'];
     }
     $form['adjust_relevance'] = array(
@@ -294,24 +295,27 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
         $node_view = node_view($node, $this->options['rendered_view_mode'], $node->language);
         $node->body[$node->language][0]['value'] = render($node_view);
       }
-=
+
       // Check language setting of content type
       $node_language_setting = variable_get('language_content_type_' . $node->type, 0);
       if ($node_language_setting == 0) {
         $node->language = LANGUAGE_NONE;
       }
-      if (isset($node->title) && isset($node->body) && isset($node->body[$node->language])) {
+
+      if (isset($node->title)) {
         // Remove punctuation from the title.
         $title = preg_replace('/[^a-z0-9 _-]+/i', '', $node->title);
-
         // Alter the relevancy of words in the node title if option is selected.
         if ($boolean && !empty($this->options['source_relevance']) && isset($this->options['title_operator'])) {
           $title = $this->alter_node_title($title);
         }
+        $text .= " $title";
+      }
 
+      if (isset($node->body) && isset($node->body[$node->language])) {
         // Strip tags and add slashes only to the body before adding the title.
-        $body = trim(addslashes(strip_tags($node->body[$node->language][0]['value'])));
-        $text .= " $title $body";
+        $body = trim(addslashes(strip_tags($node->body[$node->language][0]['safe_value'])));
+        $text .= " $body";
       }
     }
 
@@ -373,7 +377,7 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
       $weight = !empty($this->options['adjust_relevance']) ? $this->options['body_relevance'] : 1;
       $body_table = $this->query->add_table('field_data_body');
 
-      if ($weight !== '0') {
+      if ($weight) {
         $query[] = "($weight * (MATCH ($body_table.body_value) AGAINST ('$text'$modifier)))";
       }
     }
@@ -383,8 +387,20 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
       foreach (similar_get_indices() as $field => $info) {
         $weight = !empty($this->options['adjust_relevance']) && isset($this->options['included_fields:'. $field])
           ? $this->options['included_fields:'. $field] : 1;
-        $alias = $this->query->ensure_table($info['table']);
-        $query[] = "($weight * (MATCH ($alias.{$info['column']}) AGAINST ('$text'$modifier)))";
+        if ($weight) {
+          $alias = $this->query->ensure_table($info['table']);
+          if (empty($alias) && !empty($this->query->relationships)) {
+            foreach ($this->query->relationships as $relationship => $relationship_info) {
+              $alias = $this->query->ensure_table($info['table'], $relationship);
+              if (!empty($alias)) {
+                break;
+              }
+            }
+          }
+          if (!empty($alias)) {
+            $query[] = "($weight * (MATCH ($alias.{$info['column']}) AGAINST ('$text'$modifier)))";
+          }
+        }
       }
     }
     // Return a query that calculates an average score to prevent scores from fluctuating too much.
