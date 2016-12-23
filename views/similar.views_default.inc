@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Provides the default view for Similar entries module.
@@ -10,7 +9,7 @@
  */
 function similar_views_default_views() {
   $view = new view;
-  $view->name = 'Similar Entries';
+  $view->name = 'similar_entries';
   $view->description = t('Provides links to similar content based on relevancy scores using in FULLTEXT searches.');
   $view->tag = 'default';
   $view->base_table = 'node';
@@ -60,7 +59,7 @@ function similar_views_default_views() {
   $handler->display->display_options['fields']['title']['label'] = '';
   $handler->display->display_options['fields']['title']['link_to_node'] = 1;
 
-  // Provides node->moderated and node->published filters.  
+  // Provides node->moderated and node->published filters.
   $handler->display->display_options['filters']['status']['id'] = 'status';
   $handler->display->display_options['filters']['status']['table'] = 'node';
   $handler->display->display_options['filters']['status']['field'] = 'status';

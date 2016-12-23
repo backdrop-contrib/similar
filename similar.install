@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Installation functions for Similar entries module.
@@ -75,4 +74,26 @@ function similar_update_7202() {
   // Create new indices.
   include_once dirname(__FILE__) . '/similar.module';
   similar_index_fields();
+}
+
+/**
+ * Update machine name of similar view.
+ */
+function similar_update_7203() {
+  // If the similar view has been overridden, update the view name in the DB.
+  $view_in_db = db_query("SELECT COUNT(*) FROM {views_view} WHERE name = 'Similar Entries'")->fetchField();
+  if ($view_in_db) {
+    db_query("UPDATE {views_view} SET name = 'similar_entries' WHERE name = 'Similar Entries'");
+  }
+
+  // Update the block table so views placed as blocks will still appear.
+  $block_exists = db_query("SELECT COUNT(*) FROM {block} WHERE module = 'views' AND delta = 'Similar Entries-block'")->fetchField();
+  if ($block_exists) {
+    // Rename the old block to the new module+delta.
+    db_update('block')
+      ->fields(array('delta' => 'Similar Entries-block'))
+      ->condition('module', 'views')
+      ->condition('delta', 'similar_entries-block')
+      ->execute();
+  }
 }
