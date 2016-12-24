@@ -144,7 +144,7 @@ function _similar_save_index($field, $table, $column, $info) {
  *   Returns FALSE if the requested field index does not exist.
  */
 function similar_get_indices($field = NULL) {
-  $indices = &drupal_static(__FUNCTION__);
+  $indices = &backdrop_static(__FUNCTION__);
   if (!isset($indices)) {
     $indices = variable_get(SIMILAR_INDICES, array());
   }

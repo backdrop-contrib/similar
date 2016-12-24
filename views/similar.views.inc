@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * View hook implementations for Similar entries module.
@@ -53,7 +52,7 @@ function similar_views_data() {
  */
 function similar_views_handlers() {
   return array(
-    'info' => array('path' => drupal_get_path('module', 'similar') . '/views'),
+    'info' => array('path' => backdrop_get_path('module', 'similar') . '/views'),
     'handlers' => array(
       'similar_handler_sort_similar' => array(
         'parent' => 'views_handler_sort',
