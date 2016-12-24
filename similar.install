@@ -33,7 +33,8 @@ function similar_uninstall() {
   if (db_table_exists('field_data_body') && db_index_exists('field_data_body', 'similar')) {
     db_drop_index('field_data_body', 'similar');
   }
-  foreach (variable_get('similar_indices', array()) as $field => $info) {
+  $indices = config_get('similar.settings', 'similar_indices');
+  foreach ($indices as $field => $info) {
     if (db_table_exists($info['table']) && db_index_exists($info['table'], $info['index'])) {
       db_drop_index($info['table'], $info['index']);
     }
@@ -65,7 +66,8 @@ function similar_update_7201() {
  */
 function similar_update_7202() {
   // Delete old indices.
-  foreach (variable_get('similar_indices', array()) as $table => $fields) {
+  $indices = config_get('similar.settings', 'similar_indices');
+  foreach ($indices as $table => $fields) {
     if (db_table_exists($table) && db_index_exists($table, 'similar')) {
       db_drop_index($table, 'similar');
     }

@@ -297,8 +297,8 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
       }
 
       // Check language setting of content type
-      $node_language_setting = variable_get('language_content_type_' . $node->type, 0);
-      if ($node_language_setting == 0) {
+      $node_language_setting = config_get('node.type.' . $node->type, 'language');
+      if (is_null($node_language_setting)) {
         $node->language = LANGUAGE_NONE;
       }
 

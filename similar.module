@@ -7,6 +7,27 @@
 define('SIMILAR_INDICES', 'similar_indices');
 
 /**
+ * Implements hook_views_api().
+ */
+function similar_views_api() {
+  return array(
+    'api' => 2,
+    'path' => backdrop_get_path('module', 'similar') . '/views',
+  );
+}
+
+/**
+ * Implements hook_config_info().
+ */
+function similar_config_info() {
+  $prefixes['similar.settings'] = array(
+    'label' => t('Similar settings'),
+    'group' => t('Configuration'),
+  );
+  return $prefixes;
+}
+
+/**
  * Implements hook_autoload_info().
  */
 function similar_autoload_info() {
@@ -39,7 +60,7 @@ function similar_reset_indices() {
       }
     }
   }
-  variable_del(SIMILAR_INDICES);
+  config_clear('similar.settings', 'similar_indices');
   similar_index_fields();
 }
 
@@ -121,9 +142,9 @@ function _similar_save_index($field, $table, $column, $info) {
   }
 
   $info += array('table' => $table, 'column' => $column);
-  $indices = variable_get(SIMILAR_INDICES);
+  $indices = config_get('similar.settings', 'similar_indices');
   $indices[$field] = $info;
-  variable_set(SIMILAR_INDICES, $indices);
+  config_set('similar.settings', 'similar_indices', $indices);
 
   return TRUE;
 }
@@ -146,7 +167,7 @@ function _similar_save_index($field, $table, $column, $info) {
 function similar_get_indices($field = NULL) {
   $indices = &backdrop_static(__FUNCTION__);
   if (!isset($indices)) {
-    $indices = variable_get(SIMILAR_INDICES, array());
+    $indices = config_get('similar.settings', 'similar_indices');
   }
   return $field === NULL ? $indices : (isset($indices[$field]) ? $indices[$field] : FALSE);
 }
