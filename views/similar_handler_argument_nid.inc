@@ -61,7 +61,7 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
 
     $form['similar'] = array(
       '#type' => 'fieldset',
-      '#title' => t('FULLTEXT search options'),
+      '#title' => t('Similar (FULLTEXT) search options'),
     );
 
     // Add fields for increasing or decreasing relevance of destination ndoe fields.
@@ -94,9 +94,9 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     }
     $form['adjust_relevance'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Adjust relevance of fields'),
+      '#title' => t('Adjust relevance of title and body'),
       '#default_value' => $this->options['adjust_relevance'],
-      '#description' => t('Adjust the relevance of content titles, bodies, and other fields in matching.'),
+      '#description' => t('Adjust the relevance of content titles, and bodies.'),
       '#fieldset' => 'similar',
     );
     $form['title_relevance'] = array(
@@ -104,19 +104,26 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
       '#title' => t('Relevance of content\'s title.'),
       '#options' => $relevance_options,
       '#default_value' => $this->options['title_relevance'],
-      '#description' => t('Increase or decrease the relevance of matches in destination content\'s title field.'),
       '#fieldset' => 'similar',
-      '#dependency' => array('edit-options-adjust-relevance' => array('1')),
+      '#states' => array(
+        // Hide the view mode settings until needed.
+        'visible' => array(
+          'input[name="options[adjust_relevance]"]' => array('checked' => TRUE),
+        ),
+      ),
     );
     $form['body_relevance'] = array(
       '#type' => 'select',
       '#title' => t('Relevance of content\'s body.'),
       '#options' => $relevance_options,
       '#default_value' => $this->options['body_relevance'],
-      '#description' => t('Increase or decrease the relevance of matches in '.
-                          'destination content\'s body and other fields.'),
       '#fieldset' => 'similar',
-      '#dependency' => array('edit-options-adjust-relevance' => array('1')),
+      '#states' => array(
+        // Hide the view mode settings until needed.
+        'visible' => array(
+          'input[name="options[adjust_relevance]"]' => array('checked' => TRUE),
+        ),
+      ),
     );
     $form['rendered_content'] = array(
       '#type' => 'checkbox',
@@ -131,7 +138,12 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
       '#options' => $render_view_mode_options,
       '#default_value' => $this->options['rendered_view_mode'],
       '#fieldset' => 'similar',
-      '#dependency' => array('edit-options-rendered-content' => array('1')),
+      '#states' => array(
+        // Hide the view mode settings until needed.
+        'visible' => array(
+          'input[name="options[rendered_content]"]' => array('checked' => TRUE),
+        ),
+      ),
     );
 
     // Add fields for enabling matching in fields defined by field module.
@@ -154,11 +166,12 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
           '#options' => $relevance_options,
           '#default_value' => isset($this->options['included_fields:'. $field]) ? $this->options['included_fields:'. $field] : 1,
           '#fieldset' => 'similar',
-          '#dependency' => array(
-            'edit-options-include-fields' => array('1'),
-            'edit-options-adjust-relevance' => array('1'),
+          '#states' => array(
+            // Hide the field settings until needed.
+            'visible' => array(
+              'input[name="options[include_fields]"]' => array('checked' => TRUE),
+            ),
           ),
-          '#dependency_count' => 2,
         );
       }
     }
@@ -171,15 +184,19 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
       '#description' => t('Boolean mode enables the ability to increase or decrease the relevance of certain fields.<br />'.
                           'Note: Boolean mode may negatively affect the accuracy of view results.'),
     );
-
     // Add options for increasing or decreasing relevance of source node.
     $form['source_relevance'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Adjust source relevance'),
+      '#title' => t('Adjust title source relevance'),
       '#default_value' => !empty($this->options['source_relevance']),
       '#description' => t('Increase the relevance of words in the title of the content being viewed.'),
       '#fieldset' => 'similar',
-      '#dependency' => array('edit-options-boolean-mode' => array('1')),
+      '#states' => array(
+        // Hide the title source settings until needed.
+        'visible' => array(
+          'input[name="options[boolean_mode]"]' => array('checked' => TRUE),
+        ),
+      ),
     );
     $form['title_operator'] = array(
       '#type' => 'select',
@@ -197,11 +214,13 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
       ),
       '#default_value' => $this->options['title_operator'],
       '#fieldset' => 'similar',
-      '#dependency' => array(
-        'edit-options-boolean-mode' => array('1'),
-        'edit-options-source-relevance' => array('1'),
+      '#states' => array(
+        // Hide the title source settings until needed.
+        'visible' => array(
+          'input[name="options[boolean_mode]"]' => array('checked' => TRUE),
+          'input[name="options[source_relevance]"]' => array('checked' => TRUE),
+        ),
       ),
-      '#dependency_count' => 2,
     );
 
     // Add fields for creating custom relevance rules for specific words or phrases.
@@ -210,7 +229,12 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
       '#title' => t('Set custom operators in words and phrases'),
       '#default_value' => !empty($this->options['enable_custom_operators']),
       '#fieldset' => 'similar',
-      '#dependency' => array('edit-options-boolean-mode' => array('1')),
+      '#states' => array(
+        // Hide the title source settings until needed.
+        'visible' => array(
+          'input[name="options[boolean_mode]"]' => array('checked' => TRUE),
+        ),
+      ),
     );
     $form['custom_operators'] = array(
       '#type' => 'textfield',
@@ -222,11 +246,13 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
                           'See http://dev.mysql.com/doc/refman/5.5/en/fulltext-boolean.html for more information.'),
       '#maxlength' => 1024,
       '#fieldset' => 'similar',
-      '#dependency' => array(
-        'edit-options-boolean-mode' => array('1'),
-        'edit-options-enable-custom-operators' => array('1'),
+      '#states' => array(
+        // Hide the operator settings until needed.
+        'visible' => array(
+          'input[name="options[boolean_mode]"]' => array('checked' => TRUE),
+          'input[name="options[enable_custom_operators]"]' => array('checked' => TRUE),
+        ),
       ),
-      '#dependency_count' => 2,
     );
   }
 

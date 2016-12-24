@@ -46,26 +46,3 @@ function similar_views_data() {
 
   return $data;
 }
-
-/**
- * Implements hook_views_handlers().
- */
-function similar_views_handlers() {
-  return array(
-    'info' => array('path' => backdrop_get_path('module', 'similar') . '/views'),
-    'handlers' => array(
-      'similar_handler_sort_similar' => array(
-        'parent' => 'views_handler_sort',
-      ),
-      'similar_handler_argument_nid' => array(
-        'parent' => 'views_handler_argument_numeric',
-      ),
-      'similar_handler_filter_similarity' => array(
-        'parent' => 'views_handler_filter_numeric',
-      ),
-      'similar_handler_field_similarity' => array(
-        'parent' => 'views_handler_field',
-      ),
-    ),
-  );
-}
