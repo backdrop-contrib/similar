@@ -14,13 +14,13 @@ Installation
 - Install this module using the official Backdrop CMS instructions at
   https://backdropcms.org/guide/modules
 
-- Place the Similar Entries block into any layout at Administration > Structure
-  > Laouts (admin/structure/layouts).
+- Place the Similar Entries block into any layout at Administration >
+  Structure > Laouts (admin/structure/layouts).
 
-- To customize the Similar entries block, navigate to Administration > Structure
-  > Views (admin/structure/views) and edit the view named Similar Entries. The
-  Similar Entries view uses a special contextual filter. This contextual filter
-  must be present for the view to be able to determine similarity.
+- To customize the Similar entries block, navigate to Administration >
+  Structure > Views (admin/structure/views) and edit the view named Similar
+  Entries. The Similar Entries view uses a special contextual filter. This
+  contextual filter must be present for the view to to determine similarity.
 
 - Similar entries indexes field tables when cron runs. If you add a new field
   you can force Similar Entries to index it immediately by navigating to
