@@ -1,34 +1,20 @@
 <?php
-
 /**
  * @file
  * Module that shows a block listing similar entries.
- * NOTE: Uses MySQL's FULLTEXT indexing for MyISAM tables.
- *
- * @author David Kent Norman http://deekayen.net/
- * @author Arnab Nandi http://arnab.org/
- * @author Jordan Halterman jordan.halterman@gmail.com
  */
 
 define('SIMILAR_INDICES', 'similar_indices');
 
 /**
- * Implements hook_help().
+ * Implements hook_autoload_info().
  */
-function similar_help($path, $arg) {
-  switch ($path) {
-    case 'admin/help#similar':
-      return '<p>' . t('Lists the most similar nodes to the current node.') . '</p>';
-  }
-}
-
-/**
- * Implements hook_views_api().
- */
-function similar_views_api() {
+function similar_autoload_info() {
   return array(
-    'api' => 2,
-    'path' => drupal_get_path('module', 'similar') . '/views',
+    'similar_handler_argument_nid' => 'views/similar_handler_argument_nid.inc',
+    'similar_handler_field_similarity' => 'views/similar_handler_field_similarity.inc',
+    'similar_handler_filter_similarity' => 'views/similar_handler_filter_similarity.inc',
+    'similar_handler_sort_similarity' => 'views/similar_handler_sort_similarity.inc',
   );
 }
 

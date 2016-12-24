@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Defines the score filter handler for Similar entries module.

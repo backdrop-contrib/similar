@@ -1,8 +1,4 @@
+type = module
 name = Similar Entries
 description = Displays a block with the most similar nodes to the currently viewed one, based on the title and body fields, for sites using MySQL MyISAM tables.
-core = 7.x
-dependencies[] = views
-files[] = views/similar_handler_argument_nid.inc
-files[] = views/similar_handler_filter_similarity.inc
-files[] = views/similar_handler_sort_similarity.inc
-files[] = views/similar_handler_field_similarity.inc
+backdrop = 1.x

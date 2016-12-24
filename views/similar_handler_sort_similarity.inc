@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Defines the Similar entries sort handler.

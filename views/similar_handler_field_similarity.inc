@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Provides a field for displaying the similarity score of similar entries.
