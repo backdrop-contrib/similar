@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * Module that shows a block listing similar entries.
+ * Provides similar content view based on relevancy scores.
  */
 
 define('SIMILAR_INDICES', 'similar_indices');

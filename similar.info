@@ -1,4 +1,4 @@
 type = module
 name = Similar Entries
-description = Displays a block with the most similar nodes to the currently viewed one, based on the title and body fields, for sites using MySQL MyISAM tables.
+description = Provides similar content view based on relevancy scores.
 backdrop = 1.x
