@@ -1,7 +1,7 @@
 {
     "_config_name": "views.view.similar_entries",
     "name": "similar_entries",
-    "description": "Provides similar content view based on relevancy scores.",
+    "description": "Provides links to similar content based on relevancy scores using in FULLTEXT searches.",
     "tag": "default",
     "disabled": false,
     "base_table": "node",
@@ -36,103 +36,63 @@
                         "items_per_page": 8
                     }
                 },
-                "sorts": {
-                    "similarity": {
-                        "id": "similarity",
-                        "table": "similar_entries",
-                        "field": "similarity",
-                        "order": "DESC"
-                    }
-                },
+                "sorts": [],
                 "arguments": {
                     "nid": {
                         "id": "nid",
                         "table": "similar_entries",
                         "field": "nid",
-                        "default_action": "default",
-                        "default_argument_type": "node",
-                        "summary": {
-                            "sort_order": "desc",
-                            "format": "default_summary"
-                        },
-                        "summary_options": {
-                            "override": true,
-                            "items_per_page": 8
-                        },
-                        "validate_type": "node",
-                        "validate_argument_type": "nid",
-                        "validate_argument_nid_type": "nid",
-                        "validate_fail": "not found"
-                    }
-                },
-                "fields": {
-                    "field_image": {
-                        "id": "field_image",
-                        "table": "field_data_field_image",
-                        "field": "field_image",
                         "relationship": "none",
                         "group_type": "group",
                         "ui_name": "",
-                        "label": "",
-                        "exclude": 0,
-                        "alter": {
-                            "alter_text": 0,
-                            "text": "",
-                            "make_link": 0,
-                            "path": "",
-                            "absolute": 0,
-                            "external": 0,
-                            "replace_spaces": 0,
-                            "path_case": "none",
-                            "trim_whitespace": 0,
-                            "alt": "",
-                            "rel": "",
-                            "link_class": "",
-                            "prefix": "",
-                            "suffix": "",
-                            "target": "",
-                            "nl2br": 0,
-                            "max_length": "",
-                            "word_boundary": 1,
-                            "ellipsis": 1,
-                            "more_link": 0,
-                            "more_link_text": "",
-                            "more_link_path": "",
-                            "strip_tags": 0,
-                            "trim": 0,
-                            "preserve_tags": "",
-                            "html": 0
+                        "default_action": "default",
+                        "exception": {
+                            "value": "all",
+                            "title_enable": 0,
+                            "title": "All"
                         },
-                        "element_type": "",
-                        "element_class": "",
-                        "element_label_type": "",
-                        "element_label_class": "",
-                        "element_label_colon": false,
-                        "element_wrapper_type": "",
-                        "element_wrapper_class": "",
-                        "element_default_classes": 1,
-                        "empty": "",
-                        "hide_empty": 0,
-                        "empty_zero": 0,
-                        "hide_alter_empty": 1,
-                        "click_sort_column": "fid",
-                        "type": "image",
-                        "settings": {
-                            "image_style": "thumbnail",
-                            "image_link": "content",
-                            "image_float": "left"
+                        "title_enable": 0,
+                        "title": "",
+                        "breadcrumb_enable": 0,
+                        "breadcrumb": "",
+                        "default_argument_type": "node",
+                        "default_argument_options": "",
+                        "default_argument_skip_url": 0,
+                        "summary_options": null,
+                        "summary": {
+                            "sort_order": "asc",
+                            "number_of_records": 0,
+                            "format": "default_summary"
                         },
-                        "group_column": "",
-                        "group_columns": [],
-                        "group_rows": true,
-                        "delta_limit": "all",
-                        "delta_offset": 0,
-                        "delta_reversed": false,
-                        "delta_first_last": false,
-                        "multi_type": "separator",
-                        "separator": ", ",
-                        "field_api_classes": 0
-                    },
+                        "specify_validation": 0,
+                        "validate": {
+                            "type": "node",
+                            "fail": "access denied"
+                        },
+                        "validate_options": {
+                            "access_op": "view",
+                            "nid_type": "nid",
+                            "types": [],
+                            "access": 0
+                        },
+                        "break_phrase": 0,
+                        "not": false,
+                        "boolean_mode": 0,
+                        "rendered_content": 0,
+                        "rendered_view_mode": "full",
+                        "adjust_relevance": 1,
+                        "title_relevance": "1.4",
+                        "body_relevance": "0.8",
+                        "source_relevance": 1,
+                        "title_operator": "increase",
+                        "enable_custom_operators": 0,
+                        "custom_operators": "-not | -and | -a | -or | -the | -but | -therefore | -because | -can't | -can | -for | -until | -the | -of | -and | -to | -in | -is | -you | -that | -it | -he | -was | -on | -are | -as | -with | -his | -they | -I | -at | -be | -this | -have | -from | -one | -had | -by | -word | -but | -not | -what | -all | -were | -we | -when | -your | -said | -there | -use | -an | -each | -which | -she | -do | -how | -their | -if | -will | -up | -other | -about | -out | -many | -then | -them | -these | -so | -some | -her | -would | -make | -like | -him | -into | -time | -has | -look | -two | -more | -write | -go | -see | -no | -way | -could | -people | -my | -than | -first | -water | -been | -call | -who | -oil | -its | -now | -find",
+                        "include_fields": 0,
+                        "included_fields:field_city": "0",
+                        "included_fields:field_pograms": "0"
+                    }
+                },
+                "fields": {
                     "title": {
                         "id": "title",
                         "table": "node",
@@ -147,17 +107,6 @@
                         "table": "node",
                         "field": "status",
                         "value": 1,
-                        "group": 0,
-                        "expose": {
-                            "operator": false
-                        }
-                    },
-                    "similarity": {
-                        "id": "similarity",
-                        "table": "similar_entries",
-                        "field": "similarity",
-                        "value": "1",
-                        "operator": ">",
                         "group": 0,
                         "expose": {
                             "operator": false
