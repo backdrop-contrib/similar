@@ -60,7 +60,9 @@ function similar_reset_indices() {
       }
     }
   }
-  config_clear('similar.settings', 'similar_indices');
+  $config = config('similar.settings');
+  $config->clear('similar_indices');
+  $config->save();
   similar_index_fields();
 }
 
