@@ -41,15 +41,12 @@ function similar_uninstall() {
   }
 }
 
-
 /**
  * Implements hook_update_last_removed().
  */
 function similar_update_last_removed() {
-  // We've removed the 1.x-1.x version of mymodule, including database updates.
-  // For the 1.x-2.x version of the module, the next update function would be
-  // mymodule_update_1200().
-  return 7203;
+  // 7002 was the last update in Drupal 7.
+  return 7202;
 }
 
 /**
