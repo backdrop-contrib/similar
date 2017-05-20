@@ -64,7 +64,7 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
       '#title' => t('Similar (FULLTEXT) search options'),
     );
 
-    // Add fields for increasing or decreasing relevance of destination ndoe fields.
+    // Add fields for increasing or decreasing relevance of destination fields.
     $relevance_options = array(
         '0' => '0%',
         '0.1' => '10%',
@@ -311,6 +311,10 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
   public function query($group_by = FALSE) {
     $boolean = !empty($this->options['boolean_mode']);
     $text = '';
+    $comparison_text = array(
+      'title' => '',
+      'body' => '',
+    );
 
     // Since the view could have multiple nid arguments, load each node
     // and populate the $text variable with node titles and bodies.
@@ -318,14 +322,14 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
       $node = node_load($nid);
 
       if ($this->options['rendered_content']) {
-        $node_view = node_view($node, $this->options['rendered_view_mode'], $node->language);
-        $node->body[$node->language][0]['value'] = render($node_view);
+        $node_view = node_view($node, $this->options['rendered_view_mode'], $node->langcode);
+        $node->body[$node->langcode][0]['value'] = render($node_view);
       }
 
       // Check language setting of content type
       $node_language_setting = config_get('node.type.' . $node->type, 'language');
       if (is_null($node_language_setting)) {
-        $node->language = LANGUAGE_NONE;
+        $node->langcode = LANGUAGE_NONE;
       }
 
       if (isset($node->title)) {
@@ -338,9 +342,9 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
         $text .= ' ' . $title;
       }
 
-      if (isset($node->body) && isset($node->body[$node->language])) {
-        // Strip tags and add slashes only to the body before adding the title.
-        $body = trim(addslashes(strip_tags($node->body[$node->language][0]['safe_value'])));
+      if (isset($node->body) && isset($node->body[$node->langcode])) {
+        // Strip tags and add slashes from the body before adding the title.
+        $body = trim(addslashes(strip_tags($node->body[$node->langcode][0]['safe_value'])));
         $text .= ' ' . $body;
       }
     }
@@ -350,12 +354,26 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
       $replacements = array_map('trim', explode('|', $this->options['custom_operators']));
       $words = array_map('similar_handler_argument_nid::get_search_word', $replacements);
       $text = preg_replace($words, $replacements, $text);
+      $body;
+    }
+
+    $comparison_text = array(
+      'title' => trim($title),
+      'body' => trim($body),
+    );
+    if (module_exists('field') && !empty($this->options['include_fields'])) {
+      foreach ($options as $key => $option_value) {
+        if (strstr($key, 'included_fields:')) {
+          $field_name = str_replace('included_fields:', '', $key);
+          $comparison_text[$field_name] = trim(addslashes(strip_tags($node->{$field_name}[$node->langcode][0]['safe_value'])));
+        }
+      }
     }
 
     $text = trim($text);
     $this->ensure_my_table();
 
-    $query = $boolean ? $this->similar_build_query($text, 'IN BOOLEAN MODE') : $this->similar_build_query($text);
+    $query = $boolean ? $this->similar_build_query($comparison_text, 'IN BOOLEAN MODE') : $this->similar_build_query($comparison_text);
 
     // An empty string is passed for the table to bypass the table alias.
     $this->query->add_field('', $query, 'score');
@@ -368,7 +386,7 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
       $this->query->add_where(0, 'node.nid', $this->value[0], '<>');
     }
 
-    // Add a node_access tag to prevent conflict with node_access module.
+    // Add a node_access tag.
     $this->query->add_tag('node_access');
 
     // Add a Similar Entries tag to indicate that filters and sort handlers are valid.
@@ -378,8 +396,10 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
   /**
    * Builds a query from argument configuration options.
    *
-   * @param string $text
-   *   The text of the current node to be used in the query.
+   * @param array $comparison_text
+   *   The text of the current node to be used in the query. Contains keys:
+   *   - title: the node title.
+   *   - body: the node body.
    * @param string $modifier
    *   An optional FULLTEXT search modifer. ie 'IN BOOLEAN MODE'.
    *
@@ -388,44 +408,50 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
    *
    * @see similar_handler_argument_nid::query()
    */
-  public function similar_build_query($text, $modifier = '') {
+  public function similar_build_query($comparison_text, $modifier = '') {
     $query = array();
     if (!empty($modifier)) {
       $modifier = " $modifier";
     }
 
-    $weight = !empty($this->options['adjust_relevance']) && isset($this->options['title_relevance'])
-      ? $this->options['title_relevance'] : 1;
-    $query[] = "($weight * (MATCH (node.title) AGAINST ('$text'$modifier)))";
+    // Match on title.
+    $weight = 1;
+    if (!empty($this->options['adjust_relevance']) && isset($this->options['title_relevance'])) {
+      $weight = $this->options['title_relevance'];
+    }
+    $title = $comparison_text['title'];
+    $query[] = "($weight * (MATCH (node.title) AGAINST ('$title'$modifier)))";
 
-    // The body field is always included in the query if it exists.
+    // Match on body if it exists.
     if (db_table_exists('field_data_body')) {
-      $weight = !empty($this->options['adjust_relevance']) ? $this->options['body_relevance'] : 1;
-      $body_table = $this->query->add_table('field_data_body');
-
-      if ($weight) {
-        $query[] = "($weight * (MATCH ($body_table.body_value) AGAINST ('$text'$modifier)))";
+      $weight = 1;
+      if (!empty($this->options['adjust_relevance'])) {
+        $weight = $this->options['body_relevance'];
       }
+      $body_table = $this->query->add_table('field_data_body');
+      $body = $comparison_text['body'];
+      $query[] = "($weight * (MATCH ($body_table.body_value) AGAINST ('$body'$modifier)))";
     }
 
     // Add additional MATCH queries for fields if enabled.
-    if (!empty($this->options['include_fields']) && module_exists('field')) {
+    if (module_exists('field') && !empty($this->options['include_fields'])) {
       foreach (similar_get_indices() as $field => $info) {
-        $weight = !empty($this->options['adjust_relevance']) && isset($this->options['included_fields:'. $field])
-          ? $this->options['included_fields:'. $field] : 1;
-        if ($weight) {
-          $alias = $this->query->ensure_table($info['table']);
-          if (empty($alias) && !empty($this->query->relationships)) {
-            foreach ($this->query->relationships as $relationship => $relationship_info) {
-              $alias = $this->query->ensure_table($info['table'], $relationship);
-              if (!empty($alias)) {
-                break;
-              }
+        $weight = 1;
+        if (!empty($this->options['adjust_relevance']) && isset($this->options['included_fields:'. $field])) {
+          $weight = $this->options['included_fields:'. $field];
+        }
+        $alias = $this->query->ensure_table($info['table']);
+        if (empty($alias) && !empty($this->query->relationships)) {
+          foreach ($this->query->relationships as $relationship => $relationship_info) {
+            $alias = $this->query->ensure_table($info['table'], $relationship);
+            if (!empty($alias)) {
+              break;
             }
           }
-          if (!empty($alias)) {
-            $query[] = "($weight * (MATCH ($alias.{$info['column']}) AGAINST ('$text'$modifier)))";
-          }
+        }
+        if (!empty($alias)) {
+          $field_value = $comparison_text[$field];
+          $query[] = "($weight * (MATCH ($alias.{$info['column']}) AGAINST ('$field_value'$modifier)))";
         }
       }
     }
