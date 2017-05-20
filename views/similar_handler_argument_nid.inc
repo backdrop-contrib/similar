@@ -316,16 +316,22 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     // and populate the $text variable with node titles and bodies.
     foreach ($this->value as $nid) {
       $node = node_load($nid);
+      $type = node_type_get_type($node);
+
+      // Check language setting of content type
+      if (!isset($type->settings['language']) || $type->settings['language'] == 0) {
+        $node->langcode = LANGUAGE_NONE;
+      }
 
       if ($this->options['rendered_content']) {
-        $node_view = node_view($node, $this->options['rendered_view_mode'], $node->language);
-        $node->body[$node->language][0]['value'] = render($node_view);
+        $node_view = node_view($node, $this->options['rendered_view_mode'], $node->langcode);
+        $node->body[$node->langcode][0]['value'] = render($node_view);
       }
 
       // Check language setting of content type
       $node_language_setting = config_get('node.type.' . $node->type, 'language');
       if (is_null($node_language_setting)) {
-        $node->language = LANGUAGE_NONE;
+        $node->langcode = LANGUAGE_NONE;
       }
 
       if (isset($node->title)) {
@@ -338,9 +344,9 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
         $text .= ' ' . $title;
       }
 
-      if (isset($node->body) && isset($node->body[$node->language])) {
+      if (isset($node->body) && isset($node->body[$node->langcode])) {
         // Strip tags and add slashes only to the body before adding the title.
-        $body = trim(addslashes(strip_tags($node->body[$node->language][0]['safe_value'])));
+        $body = trim(addslashes(strip_tags($node->body[$node->langcode][0]['safe_value'])));
         $text .= ' ' . $body;
       }
     }
