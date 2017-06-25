@@ -320,6 +320,7 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     // and populate the $text variable with node titles and bodies.
     foreach ($this->value as $nid) {
       $node = node_load($nid);
+      $body = '';
 
       if ($this->options['rendered_content']) {
         $node_view = node_view($node, $this->options['rendered_view_mode'], $node->langcode);
@@ -344,7 +345,7 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
 
       if (isset($node->body) && isset($node->body[$node->langcode])) {
         // Strip tags and add slashes from the body before adding the title.
-        $body = trim(addslashes(strip_tags($node->body[$node->langcode][0]['safe_value'])));
+        $body .= trim(addslashes(strip_tags($node->body[$node->langcode][0]['safe_value'])));
         $text .= ' ' . $body;
       }
     }
@@ -354,7 +355,6 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
       $replacements = array_map('trim', explode('|', $this->options['custom_operators']));
       $words = array_map('similar_handler_argument_nid::get_search_word', $replacements);
       $text = preg_replace($words, $replacements, $text);
-      $body;
     }
 
     $comparison_text = array(
