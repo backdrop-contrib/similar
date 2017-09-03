@@ -1,4 +1,4 @@
-Similar entries
+Similar Entries
 ===============
 
 Provides a default View with block display for listing published content that
@@ -60,6 +60,3 @@ License
 
 This project is GPL v2 software. See the LICENSE.txt file in this directory for
 complete text.
-
-
-
