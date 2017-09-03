@@ -1,4 +1,4 @@
-Similar entries
+Similar Entries
 ===============
 
 Provides a default View with block display for listing published content that
