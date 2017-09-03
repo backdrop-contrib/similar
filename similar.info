@@ -1,4 +1,4 @@
 type = module
 name = Similar Entries
-description = Provides similar content view based on relevancy scores.
+description = Provides a list of published content that is similar to the content being viewed.
 backdrop = 1.x
