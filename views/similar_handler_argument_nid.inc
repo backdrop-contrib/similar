@@ -44,8 +44,11 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     // Note: the Views cache may need to be reset when fields are added.
     if (module_exists('field')) {
       $options['include_fields'] = array('default' => 0);
-      foreach (similar_get_indices() as $field => $info) {
-        $options['included_fields:'. $field] = array('default' => 1);
+      $indicies = similar_get_indices();
+      if (is_array($indicies)) {
+        foreach (similar_get_indices() as $field => $info) {
+          $options['included_fields:'. $field] = array('default' => 1);
+        }
       }
     }
     return $options;
