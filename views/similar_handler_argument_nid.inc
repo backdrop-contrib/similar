@@ -44,8 +44,11 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
     // Note: the Views cache may need to be reset when fields are added.
     if (module_exists('field')) {
       $options['include_fields'] = array('default' => 0);
-      foreach (similar_get_indices() as $field => $info) {
-        $options['included_fields:'. $field] = array('default' => 1);
+      $indices = similar_get_indices();
+      if (is_array($indices) && !empty($indices)) {
+        foreach ($indices as $field => $info) {
+          $options['included_fields:'. $field] = array('default' => 1);
+        }
       }
     }
     return $options;
@@ -343,6 +346,7 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
         $text .= ' ' . $title;
       }
 
+      $body = '';
       if (isset($node->body) && isset($node->body[$node->langcode])) {
         // Strip tags and add slashes from the body before adding the title.
         $body .= trim(addslashes(strip_tags($node->body[$node->langcode][0]['safe_value'])));
