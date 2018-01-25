@@ -346,6 +346,7 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
         $text .= ' ' . $title;
       }
 
+      $body = '';
       if (isset($node->body) && isset($node->body[$node->langcode])) {
         // Strip tags and add slashes from the body before adding the title.
         $body .= trim(addslashes(strip_tags($node->body[$node->langcode][0]['safe_value'])));
