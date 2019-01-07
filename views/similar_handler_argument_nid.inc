@@ -314,6 +314,7 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
   public function query($group_by = FALSE) {
     $boolean = !empty($this->options['boolean_mode']);
     $text = '';
+    $body = '';
     $comparison_text = array(
       'title' => '',
       'body' => '',
@@ -346,7 +347,7 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
         $text .= ' ' . $title;
       }
 
-      if (isset($node->body) && isset($node->body[$node->langcode])) {
+      if (property_exists($node, 'body') && isset($node->body[$node->langcode])) {
         // Strip tags and add slashes from the body before adding the title.
         $body .= trim(addslashes(strip_tags($node->body[$node->langcode][0]['safe_value'])));
         $text .= ' ' . $body;
