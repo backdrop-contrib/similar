@@ -347,10 +347,13 @@ class similar_handler_argument_nid extends views_handler_argument_numeric {
         $text .= ' ' . $title;
       }
 
-      if (property_exists($node, 'body') && isset($node->body[$node->langcode])) {
-        // Strip tags and add slashes from the body before adding the title.
-        $body .= trim(addslashes(strip_tags($node->body[$node->langcode][0]['safe_value'])));
-        $text .= ' ' . $body;
+      if (property_exists($node, 'body') && !empty($node->body[$node->langcode])) {
+        if (isset($node->body[$node->langcode][0]['safe_value'])) {
+          // Strip tags and add slashes from the body before adding the title.
+          $body .= trim(addslashes(strip_tags($node->body[$node->langcode][0]['safe_value'])));
+          $text .= ' ' . $body;
+        }
+        // @todo check_plain on items without safe_value?
       }
     }
 
